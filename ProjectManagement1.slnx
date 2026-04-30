@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ProjectManagement1.Models/ProjectManagement1.Models.csproj" />
+  <Project Path="ProjectManagement1.Server/ProjectManagement1.Core.csproj" />
+  <Project Path="ProjectManagement1/ProjectManagement1.csproj" />
+</Solution>
