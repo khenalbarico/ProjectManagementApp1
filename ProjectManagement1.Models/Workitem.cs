@@ -2,8 +2,10 @@
 
 namespace ProjectManagement1.Models;
 
-public class Workitem
+public class WorkItem
 {
-    public string         WorkItem { get; set; } = "";
-    public WorkItemStatus Status   { get; set; }
+    public string         Uid       { get; set; } = "";
+    public string         Reference { get; set; } = "";
+    public string         Developer { get; set; } = "";
+    public WorkItemStatus Status    { get; set; }
 }

@@ -4,10 +4,10 @@ namespace ProjectManagement1.Models;
 
 public class Developer
 {
+    public string                         Uid             { get; set; } = "";
     public string                         Name            { get; set; } = "";
     public DeveloperWorkloadStatus        Workload        { get; set; }
     public DeveloperHealthStatus          Health          { get; set; }
-    public Project                        Project         { get; set; } = new Project();
+    public List<string>                   Project         { get; set; } = [];
     public DeveloperProjectExposureStatus ProjectExposure { get; set; }
-    public IEnumerable<Workitem>          WorkItems       { get; set; } = [];
 }

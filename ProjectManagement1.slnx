@@ -2,4 +2,5 @@
   <Project Path="ProjectManagement1.Models/ProjectManagement1.Models.csproj" />
   <Project Path="ProjectManagement1.Server/ProjectManagement1.Core.csproj" />
   <Project Path="ProjectManagement1/ProjectManagement1.csproj" />
+  <Project Path="TestProject1/TestProject1.csproj" Id="8f45b898-36b4-4f82-821b-e9dc309ecf9a" />
 </Solution>

@@ -3,8 +3,8 @@
 public enum WorkItemStatus
 {
     Investigating,
-    Debugging,
-    IntegratingRequirements,
+    ImplementingSolution,
+    WaitingForConfirmation,
     DevDeployed,
     UatDeployed,
     ProdDeployed

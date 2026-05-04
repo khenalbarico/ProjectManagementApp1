@@ -1,8 +1,11 @@
 using ProjectManagement1.Components;
+using ProjectManagement1.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.RegisterServices();
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
