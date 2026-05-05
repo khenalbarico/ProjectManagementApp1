@@ -1,0 +1,400 @@
+﻿@inject IAppRepository AppRepository
+
+<div class="pm-modal-backdrop" @onclick="HandleBackdropClick">
+    <div class="pm-modal" @onclick:stopPropagation="true">
+
+        <div class="pm-modal-header">
+            <h2 class="pm-modal-title">Manage Data</h2>
+            <button class="pm-modal-close" @onclick="Close">✕</button>
+        </div>
+
+        <div class="pm-modal-tabs">
+            <button class="pm-tab @(_activeTab == Tab.Projects ? "pm-tab--active" : "")" @onclick='() => SetTab(Tab.Projects)'>
+                <span class="pm-tab-icon">◈</span> Projects
+            </button>
+            <button class="pm-tab @(_activeTab == Tab.Developers ? "pm-tab--active" : "")" @onclick='() => SetTab(Tab.Developers)'>
+                <span class="pm-tab-icon">⬡</span> Developers
+            </button>
+            <button class="pm-tab @(_activeTab == Tab.WorkItems ? "pm-tab--active" : "")" @onclick='() => SetTab(Tab.WorkItems)'>
+                <span class="pm-tab-icon">▣</span> Work Items
+            </button>
+        </div>
+
+        <div class="pm-modal-body">
+
+            @if (!string.IsNullOrEmpty(_successMsg))
+            {
+                <div class="pm-alert pm-alert--success">@_successMsg</div>
+            }
+            @if (!string.IsNullOrEmpty(_errorMsg))
+            {
+                <div class="pm-alert pm-alert--error">@_errorMsg</div>
+            }
+
+            @if (_activeTab == Tab.Projects)
+            {
+                <div class="pm-form-section">
+                    <div class="pm-form-mode-toggle">
+                        <button class="pm-mode-btn @(_projectMode == FormMode.Add ? "active" : "")" @onclick='() => _projectMode = FormMode.Add'>+ Add New</button>
+                        <button class="pm-mode-btn @(_projectMode == FormMode.Edit ? "active" : "")" @onclick='() => _projectMode = FormMode.Edit'>✎ Edit</button>
+                    </div>
+
+                    @if (_projectMode == FormMode.Add)
+                    {
+                        <div class="pm-form">
+                            <div class="pm-field">
+                                <label class="pm-label">Title <span class="pm-required">*</span></label>
+                                <input class="pm-input" placeholder="e.g. Phoenix Rewrite" @bind="_newProject.Title" />
+                            </div>
+                            <div class="pm-field-row">
+                                <div class="pm-field">
+                                    <label class="pm-label">Priority</label>
+                                    <select class="pm-input pm-select" @bind="_newProject.Priority">
+                                        @foreach (var val in Enum.GetValues<ProjectPriorityStatus>())
+                                        {
+                                            <option value="@val">@FormatEnum(val)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="pm-field">
+                                    <label class="pm-label">Activity</label>
+                                    <select class="pm-input pm-select" @bind="_newProject.Activity">
+                                        @foreach (var val in Enum.GetValues<ProjectActivityStatus>())
+                                        {
+                                            <option value="@val">@FormatEnum(val)</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="pm-field">
+                                <label class="pm-label">Key Person</label>
+                                <select class="pm-input pm-select" @bind="_newProject.KeyPerson">
+                                    @foreach (var val in Enum.GetValues<KeyPersons>())
+                                    {
+                                        <option value="@val">@val</option>
+                                    }
+                                </select>
+                            </div>
+                            <button class="pm-btn pm-btn--primary" @onclick="AddProject" disabled="@_isSaving">
+                                @(_isSaving ? "Saving..." : "Add Project")
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="pm-form">
+                            <div class="pm-field">
+                                <label class="pm-label">UID <span class="pm-required">*</span></label>
+                                <input class="pm-input pm-input--mono" placeholder="PRJ-XXXXX" @bind="_editProject.Uid" />
+                            </div>
+                            <div class="pm-field">
+                                <label class="pm-label">Title</label>
+                                <input class="pm-input" placeholder="Updated title" @bind="_editProject.Title" />
+                            </div>
+                            <div class="pm-field-row">
+                                <div class="pm-field">
+                                    <label class="pm-label">Priority</label>
+                                    <select class="pm-input pm-select" @bind="_editProject.Priority">
+                                        @foreach (var val in Enum.GetValues<ProjectPriorityStatus>())
+                                        {
+                                            <option value="@val">@FormatEnum(val)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="pm-field">
+                                    <label class="pm-label">Activity</label>
+                                    <select class="pm-input pm-select" @bind="_editProject.Activity">
+                                        @foreach (var val in Enum.GetValues<ProjectActivityStatus>())
+                                        {
+                                            <option value="@val">@FormatEnum(val)</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="pm-field">
+                                <label class="pm-label">Key Person</label>
+                                <select class="pm-input pm-select" @bind="_editProject.KeyPerson">
+                                    @foreach (var val in Enum.GetValues<KeyPersons>())
+                                    {
+                                        <option value="@val">@val</option>
+                                    }
+                                </select>
+                            </div>
+                            <button class="pm-btn pm-btn--secondary" @onclick="EditProject" disabled="@_isSaving">
+                                @(_isSaving ? "Saving..." : "Update Project")
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (_activeTab == Tab.Developers)
+            {
+                <div class="pm-form-section">
+                    <div class="pm-form-mode-toggle">
+                        <button class="pm-mode-btn @(_devMode == FormMode.Add ? "active" : "")" @onclick='() => _devMode = FormMode.Add'>+ Add New</button>
+                        <button class="pm-mode-btn @(_devMode == FormMode.Edit ? "active" : "")" @onclick='() => _devMode = FormMode.Edit'>✎ Edit</button>
+                    </div>
+
+                    @if (_devMode == FormMode.Add)
+                    {
+                        <div class="pm-form">
+                            <div class="pm-field">
+                                <label class="pm-label">Name <span class="pm-required">*</span></label>
+                                <input class="pm-input" placeholder="e.g. Jane Santos" @bind="_newDev.Name" />
+                            </div>
+                            <div class="pm-field-row">
+                                <div class="pm-field">
+                                    <label class="pm-label">Workload</label>
+                                    <select class="pm-input pm-select" @bind="_newDev.Workload">
+                                        @foreach (var val in Enum.GetValues<DeveloperWorkloadStatus>())
+                                        {
+                                            <option value="@val">@FormatEnum(val)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="pm-field">
+                                    <label class="pm-label">Health</label>
+                                    <select class="pm-input pm-select" @bind="_newDev.Health">
+                                        @foreach (var val in Enum.GetValues<DeveloperHealthStatus>())
+                                        {
+                                            <option value="@val">@val</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="pm-field">
+                                <label class="pm-label">Project Exposure</label>
+                                <select class="pm-input pm-select" @bind="_newDev.ProjectExposure">
+                                    @foreach (var val in Enum.GetValues<DeveloperProjectExposureStatus>())
+                                    {
+                                        <option value="@val">@FormatEnum(val)</option>
+                                    }
+                                </select>
+                            </div>
+                            <button class="pm-btn pm-btn--primary" @onclick="AddDeveloper" disabled="@_isSaving">
+                                @(_isSaving ? "Saving..." : "Add Developer")
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="pm-form">
+                            <div class="pm-field">
+                                <label class="pm-label">UID <span class="pm-required">*</span></label>
+                                <input class="pm-input pm-input--mono" placeholder="DEV-XXXXX" @bind="_editDev.Uid" />
+                            </div>
+                            <div class="pm-field">
+                                <label class="pm-label">Name</label>
+                                <input class="pm-input" placeholder="Updated name" @bind="_editDev.Name" />
+                            </div>
+                            <div class="pm-field-row">
+                                <div class="pm-field">
+                                    <label class="pm-label">Workload</label>
+                                    <select class="pm-input pm-select" @bind="_editDev.Workload">
+                                        @foreach (var val in Enum.GetValues<DeveloperWorkloadStatus>())
+                                        {
+                                            <option value="@val">@FormatEnum(val)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="pm-field">
+                                    <label class="pm-label">Health</label>
+                                    <select class="pm-input pm-select" @bind="_editDev.Health">
+                                        @foreach (var val in Enum.GetValues<DeveloperHealthStatus>())
+                                        {
+                                            <option value="@val">@val</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="pm-field">
+                                <label class="pm-label">Project Exposure</label>
+                                <select class="pm-input pm-select" @bind="_editDev.ProjectExposure">
+                                    @foreach (var val in Enum.GetValues<DeveloperProjectExposureStatus>())
+                                    {
+                                        <option value="@val">@FormatEnum(val)</option>
+                                    }
+                                </select>
+                            </div>
+                            <button class="pm-btn pm-btn--secondary" @onclick="EditDeveloper" disabled="@_isSaving">
+                                @(_isSaving ? "Saving..." : "Update Developer")
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- ===== WORK ITEMS TAB ===== -->
+            @if (_activeTab == Tab.WorkItems)
+            {
+                <div class="pm-form-section">
+                    <div class="pm-form-mode-toggle">
+                        <button class="pm-mode-btn @(_workItemMode == FormMode.Add ? "active" : "")" @onclick='() => _workItemMode = FormMode.Add'>+ Add New</button>
+                        <button class="pm-mode-btn @(_workItemMode == FormMode.Edit ? "active" : "")" @onclick='() => _workItemMode = FormMode.Edit'>✎ Edit</button>
+                    </div>
+
+                    @if (_workItemMode == FormMode.Add)
+                    {
+                        <div class="pm-form">
+                            <div class="pm-field">
+                                <label class="pm-label">Reference <span class="pm-required">*</span></label>
+                                <input class="pm-input" placeholder="e.g. https://dev.azure.com/..." @bind="_newWorkItem.Reference" />
+                            </div>
+                            <div class="pm-field">
+                                <label class="pm-label">Developer</label>
+                                <input class="pm-input pm-input--mono" placeholder="DEV-XXXXX" @bind="_newWorkItem.Developer" />
+                            </div>
+                            <div class="pm-field">
+                                <label class="pm-label">Status</label>
+                                <select class="pm-input pm-select" @bind="_newWorkItem.Status">
+                                    @foreach (var val in Enum.GetValues<WorkItemStatus>())
+                                    {
+                                        <option value="@val">@FormatEnum(val)</option>
+                                    }
+                                </select>
+                            </div>
+                            <button class="pm-btn pm-btn--primary" @onclick="AddWorkItem" disabled="@_isSaving">
+                                @(_isSaving ? "Saving..." : "Add Work Item")
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="pm-form">
+                            <div class="pm-field">
+                                <label class="pm-label">UID <span class="pm-required">*</span></label>
+                                <input class="pm-input pm-input--mono" placeholder="WRK-XXXXX" @bind="_editWorkItem.Uid" />
+                            </div>
+                            <div class="pm-field">
+                                <label class="pm-label">Reference</label>
+                                <input class="pm-input" placeholder="Updated reference" @bind="_editWorkItem.Reference" />
+                            </div>
+                            <div class="pm-field">
+                                <label class="pm-label">Developer</label>
+                                <input class="pm-input pm-input--mono" placeholder="DEV-XXXXX" @bind="_editWorkItem.Developer" />
+                            </div>
+                            <div class="pm-field">
+                                <label class="pm-label">Status</label>
+                                <select class="pm-input pm-select" @bind="_editWorkItem.Status">
+                                    @foreach (var val in Enum.GetValues<WorkItemStatus>())
+                                    {
+                                        <option value="@val">@FormatEnum(val)</option>
+                                    }
+                                </select>
+                            </div>
+                            <button class="pm-btn pm-btn--secondary" @onclick="EditWorkItem" disabled="@_isSaving">
+                                @(_isSaving ? "Saving..." : "Update Work Item")
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnDataChanged { get; set; }
+
+    private enum Tab { Projects, Developers, WorkItems }
+    private enum FormMode { Add, Edit }
+
+    private Tab _activeTab = Tab.Projects;
+    private FormMode _projectMode = FormMode.Add;
+    private FormMode _devMode = FormMode.Add;
+    private FormMode _workItemMode = FormMode.Add;
+
+    private bool _isSaving = false;
+    private string _successMsg = string.Empty;
+    private string _errorMsg = string.Empty;
+
+    private Project _newProject = new();
+    private Project _editProject = new();
+    private Developer _newDev = new();
+    private Developer _editDev = new();
+    private WorkItem _newWorkItem = new();
+    private WorkItem _editWorkItem = new();
+
+    private void SetTab(Tab tab)
+    {
+        _activeTab  = tab;
+        _successMsg = string.Empty;
+        _errorMsg   = string.Empty;
+    }
+
+    private void Close() => OnClose.InvokeAsync();
+    private void HandleBackdropClick() => Close();
+
+    private async Task AddProject()
+    {
+        if (string.IsNullOrWhiteSpace(_newProject.Title)) { _errorMsg = "Title is required."; return; }
+        _newProject.Uid = Prefixes.ProjectPrefix.Generate();
+        await SaveAsync(() => AppRepository.PostProject(_newProject));
+        _newProject = new();
+    }
+
+    private async Task EditProject()
+    {
+        if (string.IsNullOrWhiteSpace(_editProject.Uid)) { _errorMsg = "UID is required."; return; }
+        await SaveAsync(() => AppRepository.PatchProject(_editProject));
+        _editProject = new();
+    }
+
+    private async Task AddDeveloper()
+    {
+        if (string.IsNullOrWhiteSpace(_newDev.Name)) { _errorMsg = "Name is required."; return; }
+        _newDev.Uid = Prefixes.DeveloperPrefix.Generate();
+        await SaveAsync(() => AppRepository.PostDeveloper(_newDev));
+        _newDev = new();
+    }
+
+    private async Task EditDeveloper()
+    {
+        if (string.IsNullOrWhiteSpace(_editDev.Uid)) { _errorMsg = "UID is required."; return; }
+        await SaveAsync(() => AppRepository.PatchDeveloper(_editDev));
+        _editDev = new();
+    }
+
+    private async Task AddWorkItem()
+    {
+        if (string.IsNullOrWhiteSpace(_newWorkItem.Reference)) { _errorMsg = "Reference is required."; return; }
+        _newWorkItem.Uid = Prefixes.WorkitemPrefix.Generate();
+        await SaveAsync(() => AppRepository.PostWorkItem(_newWorkItem));
+        _newWorkItem = new();
+    }
+
+    private async Task EditWorkItem()
+    {
+        if (string.IsNullOrWhiteSpace(_editWorkItem.Uid)) { _errorMsg = "UID is required."; return; }
+        await SaveAsync(() => AppRepository.PatchWorkItem(_editWorkItem));
+        _editWorkItem = new();
+    }
+
+    private async Task SaveAsync(Action saveAction)
+    {
+        _isSaving   = true;
+        _successMsg = string.Empty;
+        _errorMsg   = string.Empty;
+
+        try
+        {
+            await Task.Run(saveAction);
+            _successMsg = "Saved successfully.";
+            await OnDataChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _errorMsg = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private static string FormatEnum<T>(T value) where T : Enum
+        => System.Text.RegularExpressions.Regex.Replace(value.ToString(), "([a-z])([A-Z])", "$1 $2");
+}

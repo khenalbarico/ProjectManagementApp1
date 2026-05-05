@@ -1,0 +1,25 @@
+﻿<div class="pm-float @(_isOpen ? "pm-float--open" : "")" @onclick="ToggleModal" title="Manage Data">
+    <span class="pm-float-icon">@(_isOpen ? "✕" : "⊕")</span>
+    <span class="pm-float-label">@(_isOpen ? "Close" : "Add / Edit")</span>
+</div>
+
+@if (_isOpen)
+{
+    <DataControlsModal OnClose="CloseModal" OnDataChanged="HandleDataChanged" />
+}
+
+@code {
+    [Parameter] public EventCallback OnDataChanged { get; set; }
+
+    private bool _isOpen = false;
+
+    private void ToggleModal() => _isOpen = !_isOpen;
+
+    private void CloseModal() => _isOpen = false;
+
+    private async Task HandleDataChanged()
+    {
+        _isOpen = false;
+        await OnDataChanged.InvokeAsync();
+    }
+}

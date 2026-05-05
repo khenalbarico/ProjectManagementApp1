@@ -8,6 +8,7 @@ public static class ServiceRegistry
 {
     public static void RegisterServices(this IServiceCollection svc)
     {
+        svc.AddMemoryCache();
         svc.AddSingleton<IAppRepository, AppRepository>();
         svc.AddSingleton<IAppServices, AppServices>();
     }

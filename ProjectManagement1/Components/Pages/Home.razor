@@ -1,7 +1,255 @@
 ﻿@page "/"
+@inject IAppServices AppServices
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Project Management</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="pm-dashboard">
 
-Welcome to your new app.
+    @if (_isLoading)
+    {
+        <div class="pm-loading">
+            <div class="pm-spinner"></div>
+            <span>Loading workspace...</span>
+        </div>
+    }
+    else
+    {
+        <header class="pm-header">
+            <div class="pm-header-left">
+                <div class="pm-logo-mark"></div>
+                <div>
+                    <h1 class="pm-title">Workspace</h1>
+                    <p class="pm-subtitle">Project Management Dashboard</p>
+                </div>
+            </div>
+            <div class="pm-header-stats">
+                <div class="pm-stat">
+                    <span class="pm-stat-value">@_projects.Count</span>
+                    <span class="pm-stat-label">Projects</span>
+                </div>
+                <div class="pm-stat-divider"></div>
+                <div class="pm-stat">
+                    <span class="pm-stat-value">@_developers.Count</span>
+                    <span class="pm-stat-label">Developers</span>
+                </div>
+                <div class="pm-stat-divider"></div>
+                <div class="pm-stat">
+                    <span class="pm-stat-value">@_workItems.Count</span>
+                    <span class="pm-stat-label">Work Items</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="pm-grid">
+
+            <!--  Projects  -->
+            <section class="pm-card">
+                <div class="pm-card-header">
+                    <div class="pm-card-title-row">
+                        <span class="pm-card-icon pm-card-icon--projects">◈</span>
+                        <h2 class="pm-card-title">Projects</h2>
+                        <span class="pm-badge">@_projects.Count</span>
+                    </div>
+                </div>
+                <div class="pm-card-body">
+                    @if (!_projects.Any())
+                    {
+                        <div class="pm-empty">
+                            <span class="pm-empty-icon">◈</span>
+                            <p>No projects yet.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="pm-list">
+                            @foreach (var project in _projects)
+                            {
+                                <div class="pm-list-item">
+                                    <div class="pm-list-item-accent pm-list-item-accent--projects"></div>
+                                    <div class="pm-list-item-content">
+                                        <span class="pm-item-name">@project.Title</span>
+                                        <span class="pm-item-sub">@project.KeyPerson</span>
+                                    </div>
+                                    <div class="pm-item-pills">
+                                        <span class="pm-pill pm-pill--priority-@project.Priority.ToString().ToLower()">@FormatEnum(project.Priority)</span>
+                                        <span class="pm-pill pm-pill--activity-@GetActivityClass(project.Activity)">@FormatEnum(project.Activity)</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <!--  Developers  -->
+            <section class="pm-card">
+                <div class="pm-card-header">
+                    <div class="pm-card-title-row">
+                        <span class="pm-card-icon pm-card-icon--developers">⬡</span>
+                        <h2 class="pm-card-title">Developers</h2>
+                        <span class="pm-badge">@_developers.Count</span>
+                    </div>
+                </div>
+                <div class="pm-card-body">
+                    @if (!_developers.Any())
+                    {
+                        <div class="pm-empty">
+                            <span class="pm-empty-icon">⬡</span>
+                            <p>No developers yet.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="pm-list">
+                            @foreach (var dev in _developers)
+                            {
+                                <div class="pm-list-item">
+                                    <div class="pm-list-item-accent pm-list-item-accent--developers"></div>
+                                    <div class="pm-avatar">@GetInitials(dev.Name)</div>
+                                    <div class="pm-list-item-content">
+                                        <span class="pm-item-name">@dev.Name</span>
+                                        <span class="pm-item-sub">@dev.Project.Count project(s) · @FormatEnum(dev.ProjectExposure)</span>
+                                    </div>
+                                    <div class="pm-item-pills">
+                                        <span class="pm-pill pm-pill--workload-@dev.Workload.ToString().ToLower()">@FormatEnum(dev.Workload)</span>
+                                        <span class="pm-pill pm-pill--health-@dev.Health.ToString().ToLower()">@dev.Health</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <!--  Work Items  -->
+            <section class="pm-card pm-card--wide">
+                <div class="pm-card-header">
+                    <div class="pm-card-title-row">
+                        <span class="pm-card-icon pm-card-icon--workitems">▣</span>
+                        <h2 class="pm-card-title">Work Items</h2>
+                        <span class="pm-badge">@_workItems.Count</span>
+                    </div>
+                </div>
+                <div class="pm-card-body">
+                    @if (!_workItems.Any())
+                    {
+                        <div class="pm-empty">
+                            <span class="pm-empty-icon">▣</span>
+                            <p>No work items yet.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="pm-table-wrap">
+                            <table class="pm-table">
+                                <thead>
+                                    <tr>
+                                        <th>Reference</th>
+                                        <th>Developer</th>
+                                        <th>Status</th>
+                                        <th>UID</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in _workItems)
+                                    {
+                                        <tr class="pm-table-row">
+                                            <td><span class="pm-item-name">@item.Reference</span></td>
+                                            <td>
+                                                @{
+                                                    var dev = _developers.FirstOrDefault(d => d.Name == item.Developer);
+                                                }
+                                                @if (dev is not null)
+                                                {
+                                                    <div class="pm-assignee">
+                                                        <div class="pm-avatar pm-avatar--sm">@GetInitials(dev.Name)</div>
+                                                        <span>@dev.Name</span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="pm-item-sub">@(string.IsNullOrEmpty(item.Developer) ? "Unassigned" : item.Developer)</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="pm-status-pill pm-status-pill--@GetWorkItemStatusClass(item.Status)">
+                                                    @FormatEnum(item.Status)
+                                                </span>
+                                            </td>
+                                            <td><span class="pm-item-id">@item.Uid</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </section>
+
+        </div>
+    }
+</div>
+
+<DataControlsFloat OnDataChanged="RefreshData" />
+
+@code {
+    private List<Project>   _projects   = [];
+    private List<Developer> _developers = [];
+    private List<WorkItem>  _workItems  = [];
+    private bool            _isLoading  = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _isLoading = true;
+        await Task.Yield();
+
+        var result  = AppServices.LoadAllDataSource();
+        _projects   = result.Projects;
+        _developers = result.Developers;
+        _workItems  = result.WorkItems;
+
+        _isLoading = false;
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadData();
+        StateHasChanged();
+    }
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
+            : name[..Math.Min(2, name.Length)].ToUpper();
+    }
+
+    private static string FormatEnum<T>(T value) where T : Enum
+        => System.Text.RegularExpressions.Regex.Replace(value.ToString(), "([a-z])([A-Z])", "$1 $2");
+
+    private static string GetActivityClass(ProjectActivityStatus s) => s switch
+    {
+        ProjectActivityStatus.HighActivity     => "high",
+        ProjectActivityStatus.ModerateActivity => "moderate",
+        ProjectActivityStatus.LowActivity      => "low",
+        _                                      => "low"
+    };
+
+    private static string GetWorkItemStatusClass(WorkItemStatus s) => s switch
+    {
+        WorkItemStatus.Investigating          => "investigating",
+        WorkItemStatus.ImplementingSolution   => "implementing",
+        WorkItemStatus.WaitingForConfirmation => "waiting",
+        WorkItemStatus.DevDeployed            => "dev-deployed",
+        WorkItemStatus.UatDeployed            => "uat-deployed",
+        WorkItemStatus.ProdDeployed           => "prod-deployed",
+        _                                     => "unknown"
+    };
+}
