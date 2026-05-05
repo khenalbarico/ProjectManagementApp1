@@ -84,11 +84,13 @@ public class AppRepository : IAppRepository
 
     static string ResolveDeveloperImagePath(string name) => name switch
     {
-        DeveloperImagePaths.EliName => DeveloperImagePaths.Eli,
+        DeveloperImagePaths.EliName     => DeveloperImagePaths.Eli,
         DeveloperImagePaths.JerrickName => DeveloperImagePaths.Jerrick,
-        DeveloperImagePaths.LuisName => DeveloperImagePaths.Luis,
-        DeveloperImagePaths.MarcusName => DeveloperImagePaths.Marcus,
-        DeveloperImagePaths.PoloName => DeveloperImagePaths.Polo,
+        DeveloperImagePaths.LuisName    => DeveloperImagePaths.Luis,
+        DeveloperImagePaths.MarcusName  => DeveloperImagePaths.Marcus,
+        DeveloperImagePaths.PoloName    => DeveloperImagePaths.Polo,
+        DeveloperImagePaths.MabiName    => DeveloperImagePaths.Mabi,
+        DeveloperImagePaths.MarlouName  => DeveloperImagePaths.Marlou,
         _ => ""
     };
 

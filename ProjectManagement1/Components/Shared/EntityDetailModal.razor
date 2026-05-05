@@ -13,9 +13,11 @@
             </div>
 
             <div class="pm-modal-body pm-modal-body--detail">
+
                 @if (_stack.Peek() is StackEntry { Kind: EntityKind.Developer } devEntry)
                 {
                     var dev = devEntry.Developer!;
+
                     <div class="pm-detail-hero">
                         @if (!string.IsNullOrEmpty(dev.ImagePath))
                         {
@@ -28,12 +30,19 @@
                         <div class="pm-detail-hero-info">
                             <h3 class="pm-detail-name">@dev.Name</h3>
                             <span class="pm-item-id">@dev.Uid</span>
+                            <div class="pm-detail-pills-row" style="margin-top:6px;">
+                                <span class="pm-pill pm-pill--health-@dev.Health.ToString().ToLower()">@dev.Health</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="pm-detail-pills-row">
-                        <span class="pm-pill pm-pill--workload-@dev.Workload.ToString().ToLower()">@FormatEnum(dev.Workload)</span>
-                        <span class="pm-pill pm-pill--health-@dev.Health.ToString().ToLower()">@dev.Health</span>
+                    <div class="pm-workload-banner pm-workload-banner--@dev.Workload.ToString().ToLower()">
+                        <span class="pm-workload-banner-icon">@GetWorkloadIcon(dev.Workload)</span>
+                        <div>
+                            <div style="font-weight:700;">@FormatEnum(dev.Workload)</div>
+                            <div style="font-size:0.68rem;opacity:0.75;margin-top:1px;">@GetWorkloadDescription(dev.Workload)</div>
+                        </div>
+                        <span class="pm-workload-banner-label">Workload</span>
                     </div>
 
                     @if (dev.Assignments.Any())
@@ -53,12 +62,12 @@
                             </div>
                         </div>
                     }
-           
+
                     var devWorkItems = AllWorkItems.Where(w => w.Developer == dev.Name).ToList();
                     @if (devWorkItems.Any())
                     {
                         <div class="pm-detail-section">
-                            <h4 class="pm-detail-section-title">Work Items</h4>
+                            <h4 class="pm-detail-section-title">Work Items (@devWorkItems.Count)</h4>
                             <div class="pm-relation-row">
                                 @foreach (var wi in devWorkItems)
                                 {
@@ -81,24 +90,23 @@
                         <div class="pm-detail-hero-info">
                             <h3 class="pm-detail-name">@proj.Title</h3>
                             <span class="pm-item-id">@proj.Uid</span>
+                            <div class="pm-detail-pills-row" style="margin-top:6px;">
+                                <span class="pm-pill pm-pill--priority-@proj.Priority.ToString().ToLower()">@FormatEnum(proj.Priority)</span>
+                                <span class="pm-pill pm-pill--activity-@GetActivityClass(proj.Activity)">@FormatEnum(proj.Activity)</span>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="pm-detail-pills-row">
-                        <span class="pm-pill pm-pill--priority-@proj.Priority.ToString().ToLower()">@FormatEnum(proj.Priority)</span>
-                        <span class="pm-pill pm-pill--activity-@GetActivityClass(proj.Activity)">@FormatEnum(proj.Activity)</span>
                     </div>
 
                     <div class="pm-detail-row">
                         <span class="pm-expand-label">Key Person</span>
-                        <span>@proj.KeyPerson</span>
+                        <span style="font-size:0.85rem;">@proj.KeyPerson</span>
                     </div>
 
                     var projDevs = AllDevelopers.Where(d => d.Assignments.Any(a => a.ProjectUid == proj.Uid)).ToList();
                     @if (projDevs.Any())
                     {
                         <div class="pm-detail-section">
-                            <h4 class="pm-detail-section-title">Developers</h4>
+                            <h4 class="pm-detail-section-title">Developers (@projDevs.Count)</h4>
                             <div class="pm-relation-row">
                                 @foreach (var dev in projDevs)
                                 {
@@ -112,6 +120,7 @@
                                             <div class="pm-relation-avatar pm-relation-avatar--initials">@GetInitials(dev.Name)</div>
                                         }
                                         <span class="pm-relation-label">@dev.Name</span>
+                                        <span class="pm-pill pm-pill--workload-@dev.Workload.ToString().ToLower()" style="font-size:0.55rem;padding:1px 5px;">@FormatEnum(dev.Workload)</span>
                                     </button>
                                 }
                             </div>
@@ -122,7 +131,7 @@
                     @if (projWorkItems.Any())
                     {
                         <div class="pm-detail-section">
-                            <h4 class="pm-detail-section-title">Work Items</h4>
+                            <h4 class="pm-detail-section-title">Work Items (@projWorkItems.Count)</h4>
                             <div class="pm-relation-row">
                                 @foreach (var wi in projWorkItems)
                                 {
@@ -145,15 +154,15 @@
                         <div class="pm-detail-hero-info">
                             <h3 class="pm-detail-name pm-detail-name--mono">@wi.Uid</h3>
                             <a class="pm-link" href="@wi.Reference" target="_blank">@wi.Reference</a>
+                            <div style="margin-top:6px;">
+                                <span class="pm-status-pill pm-status-pill--@GetWorkItemStatusClass(wi.Status)">@FormatEnum(wi.Status)</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="pm-detail-pills-row">
-                        <span class="pm-status-pill pm-status-pill--@GetWorkItemStatusClass(wi.Status)">@FormatEnum(wi.Status)</span>
-                    </div>
-
                     var wiProject = AllProjects.FirstOrDefault(p => p.Uid == wi.ProjectUid);
-                    var wiDev     = AllDevelopers.FirstOrDefault(d => d.Name == wi.Developer);
+                    var wiDev = AllDevelopers.FirstOrDefault(d => d.Name == wi.Developer);
+
                     @if (wiProject is not null)
                     {
                         <div class="pm-detail-section">
@@ -162,6 +171,7 @@
                                 <button class="pm-relation-chip" @onclick="() => PushProject(wiProject)">
                                     <div class="pm-relation-icon pm-relation-icon--project">◈</div>
                                     <span class="pm-relation-label">@wiProject.Title</span>
+                                    <span class="pm-pill pm-pill--activity-@GetActivityClass(wiProject.Activity)" style="font-size:0.55rem;padding:1px 5px;">@FormatEnum(wiProject.Activity)</span>
                                 </button>
                             </div>
                         </div>
@@ -182,30 +192,32 @@
                                         <div class="pm-relation-avatar pm-relation-avatar--initials">@GetInitials(wiDev.Name)</div>
                                     }
                                     <span class="pm-relation-label">@wiDev.Name</span>
+                                    <span class="pm-pill pm-pill--workload-@wiDev.Workload.ToString().ToLower()" style="font-size:0.55rem;padding:1px 5px;">@FormatEnum(wiDev.Workload)</span>
                                 </button>
                             </div>
                         </div>
                     }
                 }
+
             </div>
         </div>
     </div>
 }
 
 @code {
-    [Parameter] public List<Project>   AllProjects   { get; set; } = [];
+    [Parameter] public List<Project> AllProjects { get; set; } = [];
     [Parameter] public List<Developer> AllDevelopers { get; set; } = [];
-    [Parameter] public List<WorkItem>  AllWorkItems  { get; set; } = [];
-    [Parameter] public EventCallback   OnClose       { get; set; }
+    [Parameter] public List<WorkItem> AllWorkItems { get; set; } = [];
+    [Parameter] public EventCallback OnClose { get; set; }
 
     private enum EntityKind { Developer, Project, WorkItem }
 
     private class StackEntry
     {
-        public EntityKind  Kind       { get; init; }
-        public Developer?  Developer  { get; init; }
-        public Project?    Project    { get; init; }
-        public WorkItem?   WorkItem   { get; init; }
+        public EntityKind Kind { get; init; }
+        public Developer? Developer { get; init; }
+        public Project? Project { get; init; }
+        public WorkItem? WorkItem { get; init; }
     }
 
     private Stack<StackEntry> _stack = new();
@@ -213,9 +225,9 @@
     private string CurrentTitle => _stack.Count == 0 ? "" : _stack.Peek().Kind switch
     {
         EntityKind.Developer => _stack.Peek().Developer?.Name ?? "",
-        EntityKind.Project   => _stack.Peek().Project?.Title ?? "",
-        EntityKind.WorkItem  => _stack.Peek().WorkItem?.Uid ?? "",
-        _                    => ""
+        EntityKind.Project => _stack.Peek().Project?.Title  ?? "",
+        EntityKind.WorkItem => _stack.Peek().WorkItem?.Uid   ?? "",
+        _ => ""
     };
 
     public void OpenDeveloper(Developer dev)
@@ -278,20 +290,38 @@
 
     private static string GetActivityClass(ProjectActivityStatus s) => s switch
     {
-        ProjectActivityStatus.HighActivity     => "high",
+        ProjectActivityStatus.HighActivity => "high",
         ProjectActivityStatus.ModerateActivity => "moderate",
-        ProjectActivityStatus.LowActivity      => "low",
-        _                                      => "low"
+        ProjectActivityStatus.LowActivity => "low",
+        _ => "low"
     };
 
     private static string GetWorkItemStatusClass(WorkItemStatus s) => s switch
     {
-        WorkItemStatus.Investigating          => "investigating",
-        WorkItemStatus.ImplementingSolution   => "implementing",
+        WorkItemStatus.Investigating => "investigating",
+        WorkItemStatus.ImplementingSolution => "implementing",
         WorkItemStatus.WaitingForConfirmation => "waiting",
-        WorkItemStatus.DevDeployed            => "dev-deployed",
-        WorkItemStatus.UatDeployed            => "uat-deployed",
-        WorkItemStatus.ProdDeployed           => "prod-deployed",
-        _                                     => "unknown"
+        WorkItemStatus.DevDeployed => "dev-deployed",
+        WorkItemStatus.UatDeployed => "uat-deployed",
+        WorkItemStatus.ProdDeployed => "prod-deployed",
+        _ => "unknown"
+    };
+
+    private static string GetWorkloadIcon(DeveloperWorkloadStatus s) => s switch
+    {
+        DeveloperWorkloadStatus.Standby => "○",
+        DeveloperWorkloadStatus.UnderLoaded => "◔",
+        DeveloperWorkloadStatus.Balanced => "◑",
+        DeveloperWorkloadStatus.Overloaded => "●",
+        _ => "○"
+    };
+
+    private static string GetWorkloadDescription(DeveloperWorkloadStatus s) => s switch
+    {
+        DeveloperWorkloadStatus.Standby => "No active work items",
+        DeveloperWorkloadStatus.UnderLoaded => "Has capacity for more work",
+        DeveloperWorkloadStatus.Balanced => "Healthy workload level",
+        DeveloperWorkloadStatus.Overloaded => "Too many active items",
+        _ => ""
     };
 }
