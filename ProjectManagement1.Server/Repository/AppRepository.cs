@@ -53,25 +53,38 @@ public class AppRepository : IAppRepository
 
         foreach (var row in sheet.RowsUsed().Skip(1))
         {
-            var projectExposureRaw = row.Cell(5).GetString().Trim();
-            var projectList = projectExposureRaw
+            var projectsRaw = row.Cell(5).GetString().Trim();
+            var projectList = projectsRaw
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(p => p.Trim())
                 .ToList();
 
+            var name = row.Cell(2).GetString().Trim();
+
             developers.Add(new Developer
             {
                 Uid             = row.Cell(1).GetString().Trim(),
-                Name            = row.Cell(2).GetString().Trim(),
+                Name            = name,
                 Workload        = row.Cell(3).GetString().ParseEnum<DeveloperWorkloadStatus>(),
                 Health          = row.Cell(4).GetString().ParseEnum<DeveloperHealthStatus>(),
-                ProjectExposure = projectExposureRaw.ParseEnum<DeveloperProjectExposureStatus>(),
-                Project         = projectList
+                Project         = projectList,
+                ProjectExposure = row.Cell(6).GetString().ParseEnum<DeveloperProjectExposureStatus>(),
+                ImagePath       = ResolveDeveloperImagePath(name)
             });
         }
 
         return developers;
     }
+
+    static string ResolveDeveloperImagePath(string name) => name switch
+    {
+        DeveloperImagePaths.EliName => DeveloperImagePaths.Eli,
+        DeveloperImagePaths.JerrickName => DeveloperImagePaths.Jerrick,
+        DeveloperImagePaths.LuisName => DeveloperImagePaths.Luis,
+        DeveloperImagePaths.MarcusName => DeveloperImagePaths.Marcus,
+        DeveloperImagePaths.PoloName => DeveloperImagePaths.Polo,
+        _ => ""
+    };
 
     static List<WorkItem> LoadWorkItems(IXLWorkbook workbook)
     {

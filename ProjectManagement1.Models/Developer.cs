@@ -10,4 +10,5 @@ public class Developer
     public DeveloperHealthStatus          Health          { get; set; }
     public List<string>                   Project         { get; set; } = [];
     public DeveloperProjectExposureStatus ProjectExposure { get; set; }
+    public string                         ImagePath       { get; set; } = ""; 
 }

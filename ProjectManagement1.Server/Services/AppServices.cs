@@ -9,20 +9,25 @@ public class AppServices(IAppRepository _appRepos, IMemoryCache _memCache) : IAp
 {
     public (List<Project> Projects, List<Developer> Developers, List<WorkItem> WorkItems) LoadAllDataSource()
     {
-        var projects   = _memCache.GetOrCreate(MemoryCacheKeys.ProjectsCacheKey,   _ => LoadProjects())!;
+        var projects = _memCache.GetOrCreate(MemoryCacheKeys.ProjectsCacheKey, _ => LoadProjects())!;
         var developers = _memCache.GetOrCreate(MemoryCacheKeys.DevelopersCacheKey, _ => LoadDevelopers())!;
-        var workItems  = _memCache.GetOrCreate(MemoryCacheKeys.WorkItemsCacheKey,  _ => LoadWorkItems())!;
+        var workItems = _memCache.GetOrCreate(MemoryCacheKeys.WorkItemsCacheKey, _ => LoadWorkItems())!;
 
         return (projects, developers, workItems);
     }
 
-    public List<Project> LoadProjects()
-        => _appRepos.LoadDatasource<List<Project>>();
+    public List<Project> LoadProjects() => _appRepos.LoadDatasource<List<Project>>();
+    public List<Developer> LoadDevelopers() => _appRepos.LoadDatasource<List<Developer>>();
+    public List<WorkItem> LoadWorkItems() => _appRepos.LoadDatasource<List<WorkItem>>();
 
-    public List<Developer> LoadDevelopers()
-        => _appRepos.LoadDatasource<List<Developer>>();
+    public void InvalidateCache()
+    {
+        _memCache.Remove(MemoryCacheKeys.ProjectsCacheKey);
+        _memCache.Remove(MemoryCacheKeys.DevelopersCacheKey);
+        _memCache.Remove(MemoryCacheKeys.WorkItemsCacheKey);
+    }
 
-    public List<WorkItem> LoadWorkItems()
-        => _appRepos.LoadDatasource<List<WorkItem>>();
-
+    public void InvalidateProjectsCache() => _memCache.Remove(MemoryCacheKeys.ProjectsCacheKey);
+    public void InvalidateDevelopersCache() => _memCache.Remove(MemoryCacheKeys.DevelopersCacheKey);
+    public void InvalidateWorkItemsCache() => _memCache.Remove(MemoryCacheKeys.WorkItemsCacheKey);
 }

@@ -1,4 +1,5 @@
 ﻿@inject IAppRepository AppRepository
+@inject IAppServices AppServices
 
 <div class="pm-modal-backdrop" @onclick="HandleBackdropClick">
     <div class="pm-modal" @onclick:stopPropagation="true">
@@ -164,14 +165,37 @@
                                 </div>
                             </div>
                             <div class="pm-field">
-                                <label class="pm-label">Project Exposure</label>
-                                <select class="pm-input pm-select" @bind="_newDev.ProjectExposure">
-                                    @foreach (var val in Enum.GetValues<DeveloperProjectExposureStatus>())
+                                <label class="pm-label">Projects</label>
+                                @if (!_allProjects.Any())
+                                {
+                                    <p class="pm-item-sub">No projects available. Add a project first.</p>
+                                }
+                                else
+                                {
+                                    <select class="pm-input pm-select pm-select--multi" multiple @onchange="e => HandleNewDevProjectsChange(e)">
+                                        @foreach (var project in _allProjects)
+                                        {
+                                            <option value="@project.Uid">@project.Title</option>
+                                        }
+                                    </select>
+                                    @if (_newDevSelectedProjects.Any())
                                     {
-                                        <option value="@val">@FormatEnum(val)</option>
+                                        <p class="pm-item-sub">@_newDevSelectedProjects.Count selected</p>
                                     }
-                                </select>
+                                }
                             </div>
+                            @if (_newDevSelectedProjects.Any())
+                            {
+                                <div class="pm-field">
+                                    <label class="pm-label">Project Exposure</label>
+                                    <select class="pm-input pm-select" @bind="_newDev.ProjectExposure">
+                                        @foreach (var val in Enum.GetValues<DeveloperProjectExposureStatus>())
+                                        {
+                                            <option value="@val">@FormatEnum(val)</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
                             <button class="pm-btn pm-btn--primary" @onclick="AddDeveloper" disabled="@_isSaving">
                                 @(_isSaving ? "Saving..." : "Add Developer")
                             </button>
@@ -209,14 +233,37 @@
                                 </div>
                             </div>
                             <div class="pm-field">
-                                <label class="pm-label">Project Exposure</label>
-                                <select class="pm-input pm-select" @bind="_editDev.ProjectExposure">
-                                    @foreach (var val in Enum.GetValues<DeveloperProjectExposureStatus>())
+                                <label class="pm-label">Projects</label>
+                                @if (!_allProjects.Any())
+                                {
+                                    <p class="pm-item-sub">No projects available. Add a project first.</p>
+                                }
+                                else
+                                {
+                                    <select class="pm-input pm-select pm-select--multi" multiple @onchange="e => HandleEditDevProjectsChange(e)">
+                                        @foreach (var project in _allProjects)
+                                        {
+                                            <option value="@project.Uid" selected="@(_editDevSelectedProjects.Contains(project.Uid))">@project.Title</option>
+                                        }
+                                    </select>
+                                    @if (_editDevSelectedProjects.Any())
                                     {
-                                        <option value="@val">@FormatEnum(val)</option>
+                                        <p class="pm-item-sub">@_editDevSelectedProjects.Count selected</p>
                                     }
-                                </select>
+                                }
                             </div>
+                            @if (_editDevSelectedProjects.Any())
+                            {
+                                <div class="pm-field">
+                                    <label class="pm-label">Project Exposure</label>
+                                    <select class="pm-input pm-select" @bind="_editDev.ProjectExposure">
+                                        @foreach (var val in Enum.GetValues<DeveloperProjectExposureStatus>())
+                                        {
+                                            <option value="@val">@FormatEnum(val)</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
                             <button class="pm-btn pm-btn--secondary" @onclick="EditDeveloper" disabled="@_isSaving">
                                 @(_isSaving ? "Saving..." : "Update Developer")
                             </button>
@@ -225,7 +272,6 @@
                 </div>
             }
 
-            <!-- ===== WORK ITEMS TAB ===== -->
             @if (_activeTab == Tab.WorkItems)
             {
                 <div class="pm-form-section">
@@ -243,17 +289,33 @@
                             </div>
                             <div class="pm-field">
                                 <label class="pm-label">Developer</label>
-                                <input class="pm-input pm-input--mono" placeholder="DEV-XXXXX" @bind="_newWorkItem.Developer" />
+                                @if (!_allDevelopers.Any())
+                                {
+                                    <p class="pm-item-sub">No developers available. Add a developer first.</p>
+                                }
+                                else
+                                {
+                                    <select class="pm-input pm-select" @bind="_newWorkItem.Developer">
+                                        <option value="">— Unassigned —</option>
+                                        @foreach (var dev in _allDevelopers)
+                                        {
+                                            <option value="@dev.Name">@dev.Name</option>
+                                        }
+                                    </select>
+                                }
                             </div>
-                            <div class="pm-field">
-                                <label class="pm-label">Status</label>
-                                <select class="pm-input pm-select" @bind="_newWorkItem.Status">
-                                    @foreach (var val in Enum.GetValues<WorkItemStatus>())
-                                    {
-                                        <option value="@val">@FormatEnum(val)</option>
-                                    }
-                                </select>
-                            </div>
+                            @if (!string.IsNullOrEmpty(_newWorkItem.Developer))
+                            {
+                                <div class="pm-field">
+                                    <label class="pm-label">Status</label>
+                                    <select class="pm-input pm-select" @bind="_newWorkItem.Status">
+                                        @foreach (var val in Enum.GetValues<WorkItemStatus>())
+                                        {
+                                            <option value="@val">@FormatEnum(val)</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
                             <button class="pm-btn pm-btn--primary" @onclick="AddWorkItem" disabled="@_isSaving">
                                 @(_isSaving ? "Saving..." : "Add Work Item")
                             </button>
@@ -272,17 +334,33 @@
                             </div>
                             <div class="pm-field">
                                 <label class="pm-label">Developer</label>
-                                <input class="pm-input pm-input--mono" placeholder="DEV-XXXXX" @bind="_editWorkItem.Developer" />
+                                @if (!_allDevelopers.Any())
+                                {
+                                    <p class="pm-item-sub">No developers available. Add a developer first.</p>
+                                }
+                                else
+                                {
+                                    <select class="pm-input pm-select" @bind="_editWorkItem.Developer">
+                                        <option value="">— Unassigned —</option>
+                                        @foreach (var dev in _allDevelopers)
+                                        {
+                                            <option value="@dev.Name">@dev.Name</option>
+                                        }
+                                    </select>
+                                }
                             </div>
-                            <div class="pm-field">
-                                <label class="pm-label">Status</label>
-                                <select class="pm-input pm-select" @bind="_editWorkItem.Status">
-                                    @foreach (var val in Enum.GetValues<WorkItemStatus>())
-                                    {
-                                        <option value="@val">@FormatEnum(val)</option>
-                                    }
-                                </select>
-                            </div>
+                            @if (!string.IsNullOrEmpty(_editWorkItem.Developer))
+                            {
+                                <div class="pm-field">
+                                    <label class="pm-label">Status</label>
+                                    <select class="pm-input pm-select" @bind="_editWorkItem.Status">
+                                        @foreach (var val in Enum.GetValues<WorkItemStatus>())
+                                        {
+                                            <option value="@val">@FormatEnum(val)</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
                             <button class="pm-btn pm-btn--secondary" @onclick="EditWorkItem" disabled="@_isSaving">
                                 @(_isSaving ? "Saving..." : "Update Work Item")
                             </button>
@@ -311,12 +389,25 @@
     private string _successMsg = string.Empty;
     private string _errorMsg = string.Empty;
 
+    private List<Project> _allProjects = [];
+    private List<Developer> _allDevelopers = [];
+
+    private HashSet<string> _newDevSelectedProjects = [];
+    private HashSet<string> _editDevSelectedProjects = [];
+
     private Project _newProject = new();
     private Project _editProject = new();
     private Developer _newDev = new();
     private Developer _editDev = new();
     private WorkItem _newWorkItem = new();
     private WorkItem _editWorkItem = new();
+
+    protected override void OnInitialized()
+    {
+        var data = AppServices.LoadAllDataSource();
+        _allProjects   = data.Projects;
+        _allDevelopers = data.Developers;
+    }
 
     private void SetTab(Tab tab)
     {
@@ -328,34 +419,59 @@
     private void Close() => OnClose.InvokeAsync();
     private void HandleBackdropClick() => Close();
 
+    private void HandleNewDevProjectsChange(ChangeEventArgs e)
+        => _newDevSelectedProjects = ExtractMultiSelectValues(e);
+
+    private void HandleEditDevProjectsChange(ChangeEventArgs e)
+        => _editDevSelectedProjects = ExtractMultiSelectValues(e);
+
+    private static HashSet<string> ExtractMultiSelectValues(ChangeEventArgs e) => e.Value switch
+    {
+        string[] values => [.. values],
+        string s when !string.IsNullOrEmpty(s) => [s],
+        _ => []
+    };
+
     private async Task AddProject()
     {
         if (string.IsNullOrWhiteSpace(_newProject.Title)) { _errorMsg = "Title is required."; return; }
         _newProject.Uid = Prefixes.ProjectPrefix.Generate();
         await SaveAsync(() => AppRepository.PostProject(_newProject));
-        _newProject = new();
+        AppServices.InvalidateProjectsCache();
+        _allProjects = AppServices.LoadAllDataSource().Projects;
+        _newProject  = new();
     }
 
     private async Task EditProject()
     {
         if (string.IsNullOrWhiteSpace(_editProject.Uid)) { _errorMsg = "UID is required."; return; }
         await SaveAsync(() => AppRepository.PatchProject(_editProject));
+        AppServices.InvalidateProjectsCache();
+        _allProjects = AppServices.LoadAllDataSource().Projects;
         _editProject = new();
     }
 
     private async Task AddDeveloper()
     {
         if (string.IsNullOrWhiteSpace(_newDev.Name)) { _errorMsg = "Name is required."; return; }
-        _newDev.Uid = Prefixes.DeveloperPrefix.Generate();
+        _newDev.Uid     = Prefixes.DeveloperPrefix.Generate();
+        _newDev.Project = [.. _newDevSelectedProjects];
         await SaveAsync(() => AppRepository.PostDeveloper(_newDev));
-        _newDev = new();
+        AppServices.InvalidateDevelopersCache();
+        _allDevelopers          = AppServices.LoadAllDataSource().Developers;
+        _newDev                 = new();
+        _newDevSelectedProjects = [];
     }
 
     private async Task EditDeveloper()
     {
         if (string.IsNullOrWhiteSpace(_editDev.Uid)) { _errorMsg = "UID is required."; return; }
+        _editDev.Project = [.. _editDevSelectedProjects];
         await SaveAsync(() => AppRepository.PatchDeveloper(_editDev));
-        _editDev = new();
+        AppServices.InvalidateDevelopersCache();
+        _allDevelopers           = AppServices.LoadAllDataSource().Developers;
+        _editDev                 = new();
+        _editDevSelectedProjects = [];
     }
 
     private async Task AddWorkItem()
@@ -363,6 +479,7 @@
         if (string.IsNullOrWhiteSpace(_newWorkItem.Reference)) { _errorMsg = "Reference is required."; return; }
         _newWorkItem.Uid = Prefixes.WorkitemPrefix.Generate();
         await SaveAsync(() => AppRepository.PostWorkItem(_newWorkItem));
+        AppServices.InvalidateWorkItemsCache();
         _newWorkItem = new();
     }
 
@@ -370,6 +487,7 @@
     {
         if (string.IsNullOrWhiteSpace(_editWorkItem.Uid)) { _errorMsg = "UID is required."; return; }
         await SaveAsync(() => AppRepository.PatchWorkItem(_editWorkItem));
+        AppServices.InvalidateWorkItemsCache();
         _editWorkItem = new();
     }
 
