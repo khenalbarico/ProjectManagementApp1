@@ -572,6 +572,38 @@
         color: var(--red); border-radius: var(--radius); padding: 0.55rem 0.875rem;
     }
 
+    .pm-filter-row {
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 5px; margin-top: 0.6rem;
+    }
+    .pm-filter-row--range {
+        gap: 8px;
+    }
+    .pm-filter-chip {
+        background: none; border: 1px solid var(--border);
+        border-radius: 100px; color: var(--text-sub);
+        font-family: var(--font-mono); font-size: 0.6rem; font-weight: 600;
+        padding: 2px 10px; cursor: pointer; text-transform: uppercase;
+        letter-spacing: 0.05em; transition: all 0.15s;
+    }
+    .pm-filter-chip:hover { border-color: var(--border-light); color: var(--text); }
+    .pm-filter-chip--active { background: var(--blue-dim); border-color: var(--blue); color: var(--text); }
+    .pm-filter-divider {
+        width: 1px; height: 16px; background: var(--border); flex-shrink: 0; margin: 0 2px;
+    }
+    .pm-filter-range-label {
+        font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-sub);
+        text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+    }
+    .pm-filter-range {
+        flex: 1; min-width: 60px; max-width: 100px;
+        accent-color: var(--blue); cursor: pointer;
+    }
+    .pm-filter-range-val {
+        font-family: var(--font-mono); font-size: 0.65rem; color: var(--blue);
+        min-width: 28px; text-align: right;
+    }
+
     .pm-font-mono { font-family: var(--font-mono); }
 
     #blazor-error-ui {

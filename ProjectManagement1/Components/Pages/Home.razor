@@ -47,21 +47,31 @@
                     <div class="pm-card-title-row">
                         <span class="pm-card-icon pm-card-icon--projects">◈</span>
                         <h2 class="pm-card-title">Projects</h2>
-                        <span class="pm-badge">@_projects.Count</span>
+                        <span class="pm-badge">@FilteredProjects.Count</span>
+                    </div>
+                    <div class="pm-filter-row">
+                        <button class="pm-filter-chip @(_projActivityFilter == null ? "pm-filter-chip--active" : "")" @onclick='() => _projActivityFilter = null'>All</button>
+                        <button class="pm-filter-chip @(_projActivityFilter == ProjectActivityStatus.HighActivity ? "pm-filter-chip--active" : "")" @onclick='() => ToggleProjActivityFilter(ProjectActivityStatus.HighActivity)'>High</button>
+                        <button class="pm-filter-chip @(_projActivityFilter == ProjectActivityStatus.ModerateActivity ? "pm-filter-chip--active" : "")" @onclick='() => ToggleProjActivityFilter(ProjectActivityStatus.ModerateActivity)'>Moderate</button>
+                        <button class="pm-filter-chip @(_projActivityFilter == ProjectActivityStatus.LowActivity ? "pm-filter-chip--active" : "")" @onclick='() => ToggleProjActivityFilter(ProjectActivityStatus.LowActivity)'>Low</button>
+                        <span class="pm-filter-divider"></span>
+                        <button class="pm-filter-chip @(_projPriorityFilter == null ? "pm-filter-chip--active" : "")" @onclick='() => _projPriorityFilter = null'>All</button>
+                        <button class="pm-filter-chip @(_projPriorityFilter == ProjectPriorityStatus.Priority ? "pm-filter-chip--active" : "")" @onclick='() => ToggleProjPriorityFilter(ProjectPriorityStatus.Priority)'>Priority</button>
+                        <button class="pm-filter-chip @(_projPriorityFilter == ProjectPriorityStatus.NotPriority ? "pm-filter-chip--active" : "")" @onclick='() => ToggleProjPriorityFilter(ProjectPriorityStatus.NotPriority)'>Not Priority</button>
                     </div>
                 </div>
                 <div class="pm-card-body">
-                    @if (!_projects.Any())
+                    @if (!FilteredProjects.Any())
                     {
                         <div class="pm-empty">
                             <span class="pm-empty-icon">◈</span>
-                            <p>No projects yet.</p>
+                            <p>No projects match filters.</p>
                         </div>
                     }
                     else
                     {
                         <div class="pm-list">
-                            @foreach (var project in _projects)
+                            @foreach (var project in FilteredProjects)
                             {
                                 <div class="pm-list-item pm-list-item--clickable" @onclick="() => _detailModal.OpenProject(project)">
                                     <div class="pm-list-item-accent pm-list-item-accent--projects"></div>
@@ -86,22 +96,45 @@
                     <div class="pm-card-title-row">
                         <span class="pm-card-icon pm-card-icon--developers">⬡</span>
                         <h2 class="pm-card-title">Developers</h2>
-                        <span class="pm-badge">@_developers.Count</span>
+                        <span class="pm-badge">@FilteredDevelopers.Count</span>
+                    </div>
+                    <div class="pm-filter-row">
+                        <button class="pm-filter-chip @(_devHealthFilter == null ? "pm-filter-chip--active" : "")" @onclick='() => _devHealthFilter = null'>All</button>
+                        <button class="pm-filter-chip @(_devHealthFilter == DeveloperHealthStatus.Healthy ? "pm-filter-chip--active" : "")" @onclick='() => ToggleDevHealthFilter(DeveloperHealthStatus.Healthy)'>Healthy</button>
+                        <button class="pm-filter-chip @(_devHealthFilter == DeveloperHealthStatus.Unhealthy ? "pm-filter-chip--active" : "")" @onclick='() => ToggleDevHealthFilter(DeveloperHealthStatus.Unhealthy)'>Unhealthy</button>
+                        <span class="pm-filter-divider"></span>
+                        <button class="pm-filter-chip @(_devWorkloadFilter == null ? "pm-filter-chip--active" : "")" @onclick='() => _devWorkloadFilter = null'>All</button>
+                        <button class="pm-filter-chip @(_devWorkloadFilter == DeveloperWorkloadStatus.Standby ? "pm-filter-chip--active" : "")" @onclick='() => ToggleDevWorkloadFilter(DeveloperWorkloadStatus.Standby)'>Standby</button>
+                        <button class="pm-filter-chip @(_devWorkloadFilter == DeveloperWorkloadStatus.UnderLoaded ? "pm-filter-chip--active" : "")" @onclick='() => ToggleDevWorkloadFilter(DeveloperWorkloadStatus.UnderLoaded)'>Under</button>
+                        <button class="pm-filter-chip @(_devWorkloadFilter == DeveloperWorkloadStatus.Balanced ? "pm-filter-chip--active" : "")" @onclick='() => ToggleDevWorkloadFilter(DeveloperWorkloadStatus.Balanced)'>Balanced</button>
+                        <button class="pm-filter-chip @(_devWorkloadFilter == DeveloperWorkloadStatus.Overloaded ? "pm-filter-chip--active" : "")" @onclick='() => ToggleDevWorkloadFilter(DeveloperWorkloadStatus.Overloaded)'>Overloaded</button>
+                    </div>
+                    <div class="pm-filter-row pm-filter-row--range">
+                        <span class="pm-filter-range-label">Projects</span>
+                        <input class="pm-filter-range" type="range" min="0" max="@_maxDevProjects" step="1"
+                               value="@_devMinProjects" @oninput="e => _devMinProjects = int.Parse(e.Value!.ToString()!)" />
+                        <span class="pm-filter-range-val">≥ @_devMinProjects</span>
+                        <span class="pm-filter-divider"></span>
+                        <span class="pm-filter-range-label">Work Items</span>
+                        <input class="pm-filter-range" type="range" min="0" max="@_maxDevWorkItems" step="1"
+                               value="@_devMinWorkItems" @oninput="e => _devMinWorkItems = int.Parse(e.Value!.ToString()!)" />
+                        <span class="pm-filter-range-val">≥ @_devMinWorkItems</span>
                     </div>
                 </div>
                 <div class="pm-card-body">
-                    @if (!_developers.Any())
+                    @if (!FilteredDevelopers.Any())
                     {
                         <div class="pm-empty">
                             <span class="pm-empty-icon">⬡</span>
-                            <p>No developers yet.</p>
+                            <p>No developers match filters.</p>
                         </div>
                     }
                     else
                     {
                         <div class="pm-list">
-                            @foreach (var dev in _developers)
+                            @foreach (var dev in FilteredDevelopers)
                             {
+                                var devWorkItemCount = _workItems.Count(w => w.Developer == dev.Name);
                                 <div class="pm-list-item pm-list-item--clickable" @onclick="() => _detailModal.OpenDeveloper(dev)">
                                     <div class="pm-list-item-accent pm-list-item-accent--developers"></div>
                                     @if (!string.IsNullOrEmpty(dev.ImagePath))
@@ -114,7 +147,7 @@
                                     }
                                     <div class="pm-list-item-content">
                                         <span class="pm-item-name">@dev.Name</span>
-                                        <span class="pm-item-sub">@dev.Assignments.Count project(s)</span>
+                                        <span class="pm-item-sub">@dev.Assignments.Count proj · @devWorkItemCount items</span>
                                     </div>
                                     <div class="pm-item-pills">
                                         <span class="pm-pill pm-pill--workload-@dev.Workload.ToString().ToLower()">@FormatEnum(dev.Workload)</span>
@@ -229,6 +262,29 @@
 
     private EntityDetailModal _detailModal = default!;
 
+    private ProjectActivityStatus? _projActivityFilter = null;
+    private ProjectPriorityStatus? _projPriorityFilter = null;
+
+    private DeveloperHealthStatus? _devHealthFilter = null;
+    private DeveloperWorkloadStatus? _devWorkloadFilter = null;
+    private int _devMinProjects = 0;
+    private int _devMinWorkItems = 0;
+
+    private int _maxDevProjects => _developers.Any() ? _developers.Max(d => d.Assignments.Count) : 0;
+    private int _maxDevWorkItems => _developers.Any() ? _developers.Max(d => _workItems.Count(w => w.Developer == d.Name)) : 0;
+
+    private List<Project> FilteredProjects => _projects
+        .Where(p => _projActivityFilter == null || p.Activity == _projActivityFilter)
+        .Where(p => _projPriorityFilter == null || p.Priority == _projPriorityFilter)
+        .ToList();
+
+    private List<Developer> FilteredDevelopers => _developers
+        .Where(d => _devHealthFilter == null || d.Health == _devHealthFilter)
+        .Where(d => _devWorkloadFilter == null || d.Workload == _devWorkloadFilter)
+        .Where(d => d.Assignments.Count >= _devMinProjects)
+        .Where(d => _workItems.Count(w => w.Developer == d.Name) >= _devMinWorkItems)
+        .ToList();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
@@ -253,6 +309,18 @@
         await LoadData();
         StateHasChanged();
     }
+
+    private void ToggleProjActivityFilter(ProjectActivityStatus val)
+        => _projActivityFilter = _projActivityFilter == val ? null : val;
+
+    private void ToggleProjPriorityFilter(ProjectPriorityStatus val)
+        => _projPriorityFilter = _projPriorityFilter == val ? null : val;
+
+    private void ToggleDevHealthFilter(DeveloperHealthStatus val)
+        => _devHealthFilter = _devHealthFilter == val ? null : val;
+
+    private void ToggleDevWorkloadFilter(DeveloperWorkloadStatus val)
+        => _devWorkloadFilter = _devWorkloadFilter == val ? null : val;
 
     private static string GetInitials(string? name)
     {

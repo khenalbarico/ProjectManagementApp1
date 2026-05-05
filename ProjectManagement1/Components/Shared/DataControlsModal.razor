@@ -185,12 +185,16 @@
                                     @foreach (var assignment in _newDevAssignments)
                                     {
                                         var a = assignment;
+                                        var usedUids = _newDevAssignments.Where(x => x != a).Select(x => x.ProjectUid).ToHashSet();
                                         <div class="pm-assignment-row">
                                             <select class="pm-input pm-select pm-select--assignment" @bind="a.ProjectUid">
                                                 <option value="">— Select Project —</option>
                                                 @foreach (var proj in _allProjects)
                                                 {
-                                                    <option value="@proj.Uid">@proj.Title</option>
+                                                    if (!usedUids.Contains(proj.Uid) || a.ProjectUid == proj.Uid)
+                                                    {
+                                                        <option value="@proj.Uid">@proj.Title</option>
+                                                    }
                                                 }
                                             </select>
                                             <select class="pm-input pm-select pm-select--exposure" @bind="a.ProjectExposure">
@@ -260,12 +264,16 @@
                                             @foreach (var assignment in _editDevAssignments)
                                             {
                                                 var a = assignment;
+                                                var usedUids = _editDevAssignments.Where(x => x != a).Select(x => x.ProjectUid).ToHashSet();
                                                 <div class="pm-assignment-row">
                                                     <select class="pm-input pm-select pm-select--assignment" @bind="a.ProjectUid">
                                                         <option value="">— Select Project —</option>
                                                         @foreach (var proj in _allProjects)
                                                         {
-                                                            <option value="@proj.Uid">@proj.Title</option>
+                                                            if (!usedUids.Contains(proj.Uid) || a.ProjectUid == proj.Uid)
+                                                            {
+                                                                <option value="@proj.Uid">@proj.Title</option>
+                                                            }
                                                         }
                                                     </select>
                                                     <select class="pm-input pm-select pm-select--exposure" @bind="a.ProjectExposure">
@@ -461,6 +469,7 @@
 
     private List<Project> _allProjects = [];
     private List<Developer> _allDevelopers = [];
+    private List<WorkItem> _allWorkItems = [];
 
     private Project _newProject = new();
     private Developer _newDev = new();
@@ -486,6 +495,7 @@
         var data = AppServices.LoadAllDataSource();
         _allProjects   = data.Projects;
         _allDevelopers = data.Developers;
+        _allWorkItems  = data.WorkItems;
     }
 
     private void SetTab(Tab tab)
@@ -595,6 +605,12 @@
     private async Task AddProject()
     {
         if (string.IsNullOrWhiteSpace(_newProject.Title)) { _errorMsg = "Title is required."; return; }
+        var titleTrimmed = _newProject.Title.Trim();
+        if (_allProjects.Any(p => p.Title.Equals(titleTrimmed, StringComparison.OrdinalIgnoreCase)))
+        {
+            _errorMsg = $"A project with the title \"{titleTrimmed}\" already exists.";
+            return;
+        }
         _newProject.Uid = Prefixes.ProjectPrefix.Generate();
         await SaveAsync(() => AppRepository.PostProject(_newProject));
         AppServices.InvalidateProjectsCache();
@@ -605,6 +621,12 @@
     private async Task EditProject()
     {
         if (_editProject is null) return;
+        var titleTrimmed = _editProject.Title.Trim();
+        if (_allProjects.Any(p => p.Title.Equals(titleTrimmed, StringComparison.OrdinalIgnoreCase) && p.Uid != _editProject.Uid))
+        {
+            _errorMsg = $"Another project with the title \"{titleTrimmed}\" already exists.";
+            return;
+        }
         await SaveAsync(() => AppRepository.PatchProject(_editProject));
         AppServices.InvalidateProjectsCache();
         _allProjects       = AppServices.LoadAllDataSource().Projects;
@@ -616,6 +638,12 @@
     private async Task AddDeveloper()
     {
         if (string.IsNullOrWhiteSpace(_newDev.Name)) { _errorMsg = "Name is required."; return; }
+        var nameTrimmed = _newDev.Name.Trim();
+        if (_allDevelopers.Any(d => d.Name.Equals(nameTrimmed, StringComparison.OrdinalIgnoreCase)))
+        {
+            _errorMsg = $"A developer named \"{nameTrimmed}\" already exists.";
+            return;
+        }
         _newDev.Uid         = Prefixes.DeveloperPrefix.Generate();
         _newDev.Assignments = _newDevAssignments.Where(a => !string.IsNullOrEmpty(a.ProjectUid)).ToList();
         await SaveAsync(() => AppRepository.PostDeveloper(_newDev));
@@ -628,6 +656,12 @@
     private async Task EditDeveloper()
     {
         if (_editDev is null) return;
+        var nameTrimmed = _editDev.Name.Trim();
+        if (_allDevelopers.Any(d => d.Name.Equals(nameTrimmed, StringComparison.OrdinalIgnoreCase) && d.Uid != _editDev.Uid))
+        {
+            _errorMsg = $"Another developer named \"{nameTrimmed}\" already exists.";
+            return;
+        }
         _editDev.Assignments = _editDevAssignments.Where(a => !string.IsNullOrEmpty(a.ProjectUid)).ToList();
         await SaveAsync(() => AppRepository.PatchDeveloper(_editDev));
         AppServices.InvalidateDevelopersCache();
@@ -641,17 +675,31 @@
     private async Task AddWorkItem()
     {
         if (string.IsNullOrWhiteSpace(_newWorkItem.Reference)) { _errorMsg = "Reference is required."; return; }
+        var refTrimmed = _newWorkItem.Reference.Trim();
+        if (_allWorkItems.Any(w => w.Reference.Equals(refTrimmed, StringComparison.OrdinalIgnoreCase)))
+        {
+            _errorMsg = $"A work item with that reference already exists.";
+            return;
+        }
         _newWorkItem.Uid = Prefixes.WorkitemPrefix.Generate();
         await SaveAsync(() => AppRepository.PostWorkItem(_newWorkItem));
         AppServices.InvalidateWorkItemsCache();
-        _newWorkItem = new();
+        _allWorkItems = AppServices.LoadAllDataSource().WorkItems;
+        _newWorkItem  = new();
     }
 
     private async Task EditWorkItem()
     {
         if (_editWorkItem is null) return;
+        var refTrimmed = _editWorkItem.Reference.Trim();
+        if (_allWorkItems.Any(w => w.Reference.Equals(refTrimmed, StringComparison.OrdinalIgnoreCase) && w.Uid != _editWorkItem.Uid))
+        {
+            _errorMsg = $"Another work item with that reference already exists.";
+            return;
+        }
         await SaveAsync(() => AppRepository.PatchWorkItem(_editWorkItem));
         AppServices.InvalidateWorkItemsCache();
+        _allWorkItems       = AppServices.LoadAllDataSource().WorkItems;
         _editWorkItem       = null;
         _editWorkItemUid    = string.Empty;
         _workItemLookupDone = false;
