@@ -72,7 +72,7 @@ public class AppRepository : IAppRepository
             {
                 Uid         = row.Cell(1).GetString().Trim(),
                 Name        = name,
-                Workload    = row.Cell(3).GetString().ParseEnum<DeveloperWorkloadStatus>(),
+                Workload    = DeveloperWorkloadStatus.Standby,
                 Health      = row.Cell(4).GetString().ParseEnum<DeveloperHealthStatus>(),
                 Assignments = assignments,
                 ImagePath   = ResolveDeveloperImagePath(name)
@@ -121,7 +121,7 @@ public class AppRepository : IAppRepository
         payload.Uid = Prefixes.DeveloperPrefix.Generate();
         sheet.Cell(nextRow, 1).Value = payload.Uid;
         sheet.Cell(nextRow, 2).Value = payload.Name;
-        sheet.Cell(nextRow, 3).Value = payload.Workload.ToString();
+        sheet.Cell(nextRow, 3).Value = string.Empty;
         sheet.Cell(nextRow, 4).Value = payload.Health.ToString();
         sheet.Cell(nextRow, 5).Value = string.Join("|", payload.Assignments.Select(a => $"{a.ProjectUid}:{a.ProjectExposure}"));
 
@@ -170,7 +170,6 @@ public class AppRepository : IAppRepository
             if (row.Cell(1).GetString().Trim() != payload.Uid) continue;
 
             row.Cell(2).Value = payload.Name;
-            row.Cell(3).Value = payload.Workload.ToString();
             row.Cell(4).Value = payload.Health.ToString();
             row.Cell(5).Value = string.Join("|", payload.Assignments.Select(a => $"{a.ProjectUid}:{a.ProjectExposure}"));
 

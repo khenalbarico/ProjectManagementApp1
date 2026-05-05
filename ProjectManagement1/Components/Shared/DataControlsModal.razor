@@ -165,25 +165,14 @@
                                 <label class="pm-label">Name <span class="pm-required">*</span></label>
                                 <input class="pm-input" placeholder="e.g. Jane Santos" @bind="_newDev.Name" />
                             </div>
-                            <div class="pm-field-row">
-                                <div class="pm-field">
-                                    <label class="pm-label">Workload</label>
-                                    <select class="pm-input pm-select" @bind="_newDev.Workload">
-                                        @foreach (var val in Enum.GetValues<DeveloperWorkloadStatus>())
-                                        {
-                                            <option value="@val">@FormatEnum(val)</option>
-                                        }
-                                    </select>
-                                </div>
-                                <div class="pm-field">
-                                    <label class="pm-label">Health</label>
-                                    <select class="pm-input pm-select" @bind="_newDev.Health">
-                                        @foreach (var val in Enum.GetValues<DeveloperHealthStatus>())
-                                        {
-                                            <option value="@val">@val</option>
-                                        }
-                                    </select>
-                                </div>
+                            <div class="pm-field">
+                                <label class="pm-label">Health</label>
+                                <select class="pm-input pm-select" @bind="_newDev.Health">
+                                    @foreach (var val in Enum.GetValues<DeveloperHealthStatus>())
+                                    {
+                                        <option value="@val">@val</option>
+                                    }
+                                </select>
                             </div>
                             <div class="pm-field">
                                 <label class="pm-label">Project Assignments</label>
@@ -251,25 +240,14 @@
                                         <label class="pm-label">Name</label>
                                         <input class="pm-input" @bind="_editDev.Name" />
                                     </div>
-                                    <div class="pm-field-row">
-                                        <div class="pm-field">
-                                            <label class="pm-label">Workload</label>
-                                            <select class="pm-input pm-select" @bind="_editDev.Workload">
-                                                @foreach (var val in Enum.GetValues<DeveloperWorkloadStatus>())
-                                                {
-                                                    <option value="@val">@FormatEnum(val)</option>
-                                                }
-                                            </select>
-                                        </div>
-                                        <div class="pm-field">
-                                            <label class="pm-label">Health</label>
-                                            <select class="pm-input pm-select" @bind="_editDev.Health">
-                                                @foreach (var val in Enum.GetValues<DeveloperHealthStatus>())
-                                                {
-                                                    <option value="@val">@val</option>
-                                                }
-                                            </select>
-                                        </div>
+                                    <div class="pm-field">
+                                        <label class="pm-label">Health</label>
+                                        <select class="pm-input pm-select" @bind="_editDev.Health">
+                                            @foreach (var val in Enum.GetValues<DeveloperHealthStatus>())
+                                            {
+                                                <option value="@val">@val</option>
+                                            }
+                                        </select>
                                     </div>
                                     <div class="pm-field">
                                         <label class="pm-label">Project Assignments</label>
@@ -519,12 +497,12 @@
 
     private void SwitchProjectMode(FormMode mode)
     {
-        _projectMode        = mode;
-        _editProjectUid     = string.Empty;
-        _editProject        = null;
-        _projectLookupDone  = false;
-        _successMsg         = string.Empty;
-        _errorMsg           = string.Empty;
+        _projectMode       = mode;
+        _editProjectUid    = string.Empty;
+        _editProject       = null;
+        _projectLookupDone = false;
+        _successMsg        = string.Empty;
+        _errorMsg          = string.Empty;
     }
 
     private void SwitchDevMode(FormMode mode)
@@ -540,12 +518,12 @@
 
     private void SwitchWorkItemMode(FormMode mode)
     {
-        _workItemMode        = mode;
-        _editWorkItemUid     = string.Empty;
-        _editWorkItem        = null;
-        _workItemLookupDone  = false;
-        _successMsg          = string.Empty;
-        _errorMsg            = string.Empty;
+        _workItemMode       = mode;
+        _editWorkItemUid    = string.Empty;
+        _editWorkItem       = null;
+        _workItemLookupDone = false;
+        _successMsg         = string.Empty;
+        _errorMsg           = string.Empty;
     }
 
     private void LookupProject()
@@ -642,9 +620,9 @@
         _newDev.Assignments = _newDevAssignments.Where(a => !string.IsNullOrEmpty(a.ProjectUid)).ToList();
         await SaveAsync(() => AppRepository.PostDeveloper(_newDev));
         AppServices.InvalidateDevelopersCache();
-        _allDevelopers      = AppServices.LoadAllDataSource().Developers;
-        _newDev             = new();
-        _newDevAssignments  = [];
+        _allDevelopers     = AppServices.LoadAllDataSource().Developers;
+        _newDev            = new();
+        _newDevAssignments = [];
     }
 
     private async Task EditDeveloper()
@@ -674,9 +652,9 @@
         if (_editWorkItem is null) return;
         await SaveAsync(() => AppRepository.PatchWorkItem(_editWorkItem));
         AppServices.InvalidateWorkItemsCache();
-        _editWorkItem        = null;
-        _editWorkItemUid     = string.Empty;
-        _workItemLookupDone  = false;
+        _editWorkItem       = null;
+        _editWorkItemUid    = string.Empty;
+        _workItemLookupDone = false;
     }
 
     private async Task SaveAsync(Action saveAction)
