@@ -11,7 +11,6 @@ public class AppRepository : IAppRepository
     public TResult LoadDatasource<TResult>()
     {
         using var workbook = new XLWorkbook(DataSource.FilePath);
-
         var resultType = typeof(TResult);
 
         if (resultType == typeof(List<Project>))
@@ -53,23 +52,30 @@ public class AppRepository : IAppRepository
 
         foreach (var row in sheet.RowsUsed().Skip(1))
         {
-            var projectsRaw = row.Cell(5).GetString().Trim();
-            var projectList = projectsRaw
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(p => p.Trim())
+            var assignmentsRaw = row.Cell(5).GetString().Trim();
+            var assignments = assignmentsRaw
+                .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                .Select(p =>
+                {
+                    var parts = p.Trim().Split(':', 2);
+                    return new ProjectAssignment
+                    {
+                        ProjectUid      = parts[0].Trim(),
+                        ProjectExposure = parts.Length > 1 ? parts[1].Trim() : ""
+                    };
+                })
                 .ToList();
 
             var name = row.Cell(2).GetString().Trim();
 
             developers.Add(new Developer
             {
-                Uid             = row.Cell(1).GetString().Trim(),
-                Name            = name,
-                Workload        = row.Cell(3).GetString().ParseEnum<DeveloperWorkloadStatus>(),
-                Health          = row.Cell(4).GetString().ParseEnum<DeveloperHealthStatus>(),
-                Project         = projectList,
-                ProjectExposure = row.Cell(6).GetString().ParseEnum<DeveloperProjectExposureStatus>(),
-                ImagePath       = ResolveDeveloperImagePath(name)
+                Uid         = row.Cell(1).GetString().Trim(),
+                Name        = name,
+                Workload    = row.Cell(3).GetString().ParseEnum<DeveloperWorkloadStatus>(),
+                Health      = row.Cell(4).GetString().ParseEnum<DeveloperHealthStatus>(),
+                Assignments = assignments,
+                ImagePath   = ResolveDeveloperImagePath(name)
             });
         }
 
@@ -95,10 +101,11 @@ public class AppRepository : IAppRepository
         {
             workItems.Add(new WorkItem
             {
-                Uid       = row.Cell(1).GetString().Trim(),
-                Reference = row.Cell(2).GetString().Trim(),
-                Developer = row.Cell(3).GetString().Trim(),
-                Status    = row.Cell(5).GetString().ParseEnum<WorkItemStatus>()
+                Uid        = row.Cell(1).GetString().Trim(),
+                Reference  = row.Cell(2).GetString().Trim(),
+                Developer  = row.Cell(3).GetString().Trim(),
+                ProjectUid = row.Cell(4).GetString().Trim(),
+                Status     = row.Cell(5).GetString().ParseEnum<WorkItemStatus>()
             });
         }
 
@@ -116,8 +123,7 @@ public class AppRepository : IAppRepository
         sheet.Cell(nextRow, 2).Value = payload.Name;
         sheet.Cell(nextRow, 3).Value = payload.Workload.ToString();
         sheet.Cell(nextRow, 4).Value = payload.Health.ToString();
-        sheet.Cell(nextRow, 5).Value = string.Join(", ", payload.Project);
-        sheet.Cell(nextRow, 6).Value = payload.ProjectExposure.ToString();
+        sheet.Cell(nextRow, 5).Value = string.Join("|", payload.Assignments.Select(a => $"{a.ProjectUid}:{a.ProjectExposure}"));
 
         workbook.Save();
     }
@@ -146,9 +152,10 @@ public class AppRepository : IAppRepository
 
         payload.Uid = Prefixes.WorkitemPrefix.Generate();
         sheet.Cell(nextRow, 1).Value = payload.Uid;
-        sheet.Cell(nextRow, 2).Value = string.Join(", ", payload.Reference);
-        sheet.Cell(nextRow, 3).Value = string.Join(", ", payload.Developer);
-        sheet.Cell(nextRow, 4).Value = payload.Status.ToString();
+        sheet.Cell(nextRow, 2).Value = payload.Reference;
+        sheet.Cell(nextRow, 3).Value = payload.Developer;
+        sheet.Cell(nextRow, 4).Value = payload.ProjectUid;
+        sheet.Cell(nextRow, 5).Value = payload.Status.ToString();
 
         workbook.Save();
     }
@@ -165,8 +172,7 @@ public class AppRepository : IAppRepository
             row.Cell(2).Value = payload.Name;
             row.Cell(3).Value = payload.Workload.ToString();
             row.Cell(4).Value = payload.Health.ToString();
-            row.Cell(5).Value = string.Join(", ", payload.Project);
-            row.Cell(6).Value = payload.ProjectExposure.ToString();
+            row.Cell(5).Value = string.Join("|", payload.Assignments.Select(a => $"{a.ProjectUid}:{a.ProjectExposure}"));
 
             break;
         }
@@ -203,8 +209,9 @@ public class AppRepository : IAppRepository
         {
             if (row.Cell(1).GetString().Trim() != payload.Uid) continue;
 
-            row.Cell(2).Value = string.Join(", ", payload.Reference);
-            row.Cell(3).Value = string.Join(", ", payload.Developer);
+            row.Cell(2).Value = payload.Reference;
+            row.Cell(3).Value = payload.Developer;
+            row.Cell(4).Value = payload.ProjectUid;
             row.Cell(5).Value = payload.Status.ToString();
 
             break;

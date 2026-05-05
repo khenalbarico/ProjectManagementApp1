@@ -63,8 +63,7 @@
                         <div class="pm-list">
                             @foreach (var project in _projects)
                             {
-                                var isExpanded = _expandedProjects.Contains(project.Uid);
-                                <div class="pm-list-item pm-list-item--clickable" @onclick="() => ToggleExpand(_expandedProjects, project.Uid)">
+                                <div class="pm-list-item pm-list-item--clickable" @onclick="() => _detailModal.OpenProject(project)">
                                     <div class="pm-list-item-accent pm-list-item-accent--projects"></div>
                                     <div class="pm-list-item-content">
                                         <span class="pm-item-name">@project.Title</span>
@@ -74,29 +73,8 @@
                                         <span class="pm-pill pm-pill--priority-@project.Priority.ToString().ToLower()">@FormatEnum(project.Priority)</span>
                                         <span class="pm-pill pm-pill--activity-@GetActivityClass(project.Activity)">@FormatEnum(project.Activity)</span>
                                     </div>
-                                    <span class="pm-expand-chevron @(isExpanded ? "pm-expand-chevron--open" : "")">›</span>
+                                    <span class="pm-list-item-arrow">›</span>
                                 </div>
-                                @if (isExpanded)
-                                {
-                                    <div class="pm-expand-panel">
-                                        <div class="pm-expand-row">
-                                            <span class="pm-expand-label">UID</span>
-                                            <span class="pm-item-id">@project.Uid</span>
-                                        </div>
-                                        <div class="pm-expand-row">
-                                            <span class="pm-expand-label">Priority</span>
-                                            <span class="pm-pill pm-pill--priority-@project.Priority.ToString().ToLower()">@FormatEnum(project.Priority)</span>
-                                        </div>
-                                        <div class="pm-expand-row">
-                                            <span class="pm-expand-label">Activity</span>
-                                            <span class="pm-pill pm-pill--activity-@GetActivityClass(project.Activity)">@FormatEnum(project.Activity)</span>
-                                        </div>
-                                        <div class="pm-expand-row">
-                                            <span class="pm-expand-label">Key Person</span>
-                                            <span>@project.KeyPerson</span>
-                                        </div>
-                                    </div>
-                                }
                             }
                         </div>
                     }
@@ -124,8 +102,7 @@
                         <div class="pm-list">
                             @foreach (var dev in _developers)
                             {
-                                var isExpanded = _expandedDevs.Contains(dev.Uid);
-                                <div class="pm-list-item pm-list-item--clickable" @onclick="() => ToggleExpand(_expandedDevs, dev.Uid)">
+                                <div class="pm-list-item pm-list-item--clickable" @onclick="() => _detailModal.OpenDeveloper(dev)">
                                     <div class="pm-list-item-accent pm-list-item-accent--developers"></div>
                                     @if (!string.IsNullOrEmpty(dev.ImagePath))
                                     {
@@ -137,48 +114,14 @@
                                     }
                                     <div class="pm-list-item-content">
                                         <span class="pm-item-name">@dev.Name</span>
-                                        <span class="pm-item-sub">@dev.Project.Count project(s) · @FormatEnum(dev.ProjectExposure)</span>
+                                        <span class="pm-item-sub">@dev.Assignments.Count project(s)</span>
                                     </div>
                                     <div class="pm-item-pills">
                                         <span class="pm-pill pm-pill--workload-@dev.Workload.ToString().ToLower()">@FormatEnum(dev.Workload)</span>
                                         <span class="pm-pill pm-pill--health-@dev.Health.ToString().ToLower()">@dev.Health</span>
                                     </div>
-                                    <span class="pm-expand-chevron @(isExpanded ? "pm-expand-chevron--open" : "")">›</span>
+                                    <span class="pm-list-item-arrow">›</span>
                                 </div>
-                                @if (isExpanded)
-                                {
-                                    <div class="pm-expand-panel">
-                                        <div class="pm-expand-row">
-                                            <span class="pm-expand-label">UID</span>
-                                            <span class="pm-item-id">@dev.Uid</span>
-                                        </div>
-                                        <div class="pm-expand-row">
-                                            <span class="pm-expand-label">Workload</span>
-                                            <span class="pm-pill pm-pill--workload-@dev.Workload.ToString().ToLower()">@FormatEnum(dev.Workload)</span>
-                                        </div>
-                                        <div class="pm-expand-row">
-                                            <span class="pm-expand-label">Health</span>
-                                            <span class="pm-pill pm-pill--health-@dev.Health.ToString().ToLower()">@dev.Health</span>
-                                        </div>
-                                        <div class="pm-expand-row">
-                                            <span class="pm-expand-label">Exposure</span>
-                                            <span>@FormatEnum(dev.ProjectExposure)</span>
-                                        </div>
-                                        @if (dev.Project.Any())
-                                        {
-                                            <div class="pm-expand-row pm-expand-row--top">
-                                                <span class="pm-expand-label">Projects</span>
-                                                <div class="pm-expand-tags">
-                                                    @foreach (var uid in dev.Project)
-                                                    {
-                                                        var proj = _projects.FirstOrDefault(p => p.Uid == uid);
-                                                        <span class="pm-tag">@(proj?.Title ?? uid)</span>
-                                                    }
-                                                </div>
-                                            </div>
-                                        }
-                                    </div>
-                                }
                             }
                         </div>
                     }
@@ -207,8 +150,8 @@
                             <table class="pm-table">
                                 <thead>
                                     <tr>
-                                        <th></th>
                                         <th>Reference</th>
+                                        <th>Project</th>
                                         <th>Developer</th>
                                         <th>Status</th>
                                         <th>UID</th>
@@ -217,13 +160,20 @@
                                 <tbody>
                                     @foreach (var item in _workItems)
                                     {
-                                        var isExpanded = _expandedWorkItems.Contains(item.Uid);
                                         var dev = _developers.FirstOrDefault(d => d.Name == item.Developer);
-                                        <tr class="pm-table-row pm-table-row--clickable" @onclick="() => ToggleExpand(_expandedWorkItems, item.Uid)">
-                                            <td>
-                                                <span class="pm-expand-chevron @(isExpanded ? "pm-expand-chevron--open" : "")">›</span>
-                                            </td>
+                                        var proj = _projects.FirstOrDefault(p => p.Uid == item.ProjectUid);
+                                        <tr class="pm-table-row pm-table-row--clickable" @onclick="() => _detailModal.OpenWorkItem(item)">
                                             <td><span class="pm-item-name">@item.Reference</span></td>
+                                            <td>
+                                                @if (proj is not null)
+                                                {
+                                                    <span class="pm-tag">@proj.Title</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="pm-item-sub">—</span>
+                                                }
+                                            </td>
                                             <td>
                                                 @if (dev is not null)
                                                 {
@@ -251,31 +201,6 @@
                                             </td>
                                             <td><span class="pm-item-id">@item.Uid</span></td>
                                         </tr>
-                                        @if (isExpanded)
-                                        {
-                                            <tr class="pm-table-expand-row">
-                                                <td colspan="5">
-                                                    <div class="pm-expand-panel pm-expand-panel--table">
-                                                        <div class="pm-expand-row">
-                                                            <span class="pm-expand-label">UID</span>
-                                                            <span class="pm-item-id">@item.Uid</span>
-                                                        </div>
-                                                        <div class="pm-expand-row">
-                                                            <span class="pm-expand-label">Reference</span>
-                                                            <a class="pm-link" href="@item.Reference" target="_blank">@item.Reference</a>
-                                                        </div>
-                                                        <div class="pm-expand-row">
-                                                            <span class="pm-expand-label">Developer</span>
-                                                            <span>@(string.IsNullOrEmpty(item.Developer) ? "Unassigned" : item.Developer)</span>
-                                                        </div>
-                                                        <div class="pm-expand-row">
-                                                            <span class="pm-expand-label">Status</span>
-                                                            <span class="pm-status-pill pm-status-pill--@GetWorkItemStatusClass(item.Status)">@FormatEnum(item.Status)</span>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        }
                                     }
                                 </tbody>
                             </table>
@@ -288,6 +213,12 @@
     }
 </div>
 
+<EntityDetailModal @ref="_detailModal"
+                   AllProjects="@_projects"
+                   AllDevelopers="@_developers"
+                   AllWorkItems="@_workItems"
+                   OnClose="@(() => StateHasChanged())" />
+
 <DataControlsFloat OnDataChanged="RefreshData" />
 
 @code {
@@ -296,9 +227,7 @@
     private List<WorkItem> _workItems = [];
     private bool _isLoading = true;
 
-    private HashSet<string> _expandedProjects = [];
-    private HashSet<string> _expandedDevs = [];
-    private HashSet<string> _expandedWorkItems = [];
+    private EntityDetailModal _detailModal = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -323,11 +252,6 @@
         AppServices.InvalidateCache();
         await LoadData();
         StateHasChanged();
-    }
-
-    private static void ToggleExpand(HashSet<string> set, string uid)
-    {
-        if (!set.Add(uid)) set.Remove(uid);
     }
 
     private static string GetInitials(string? name)

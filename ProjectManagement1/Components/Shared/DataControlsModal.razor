@@ -36,8 +36,8 @@
             {
                 <div class="pm-form-section">
                     <div class="pm-form-mode-toggle">
-                        <button class="pm-mode-btn @(_projectMode == FormMode.Add ? "active" : "")" @onclick='() => _projectMode = FormMode.Add'>+ Add New</button>
-                        <button class="pm-mode-btn @(_projectMode == FormMode.Edit ? "active" : "")" @onclick='() => _projectMode = FormMode.Edit'>✎ Edit</button>
+                        <button class="pm-mode-btn @(_projectMode == FormMode.Add ? "active" : "")" @onclick='() => SwitchProjectMode(FormMode.Add)'>+ Add New</button>
+                        <button class="pm-mode-btn @(_projectMode == FormMode.Edit ? "active" : "")" @onclick='() => SwitchProjectMode(FormMode.Edit)'>✎ Edit</button>
                     </div>
 
                     @if (_projectMode == FormMode.Add)
@@ -86,44 +86,65 @@
                         <div class="pm-form">
                             <div class="pm-field">
                                 <label class="pm-label">UID <span class="pm-required">*</span></label>
-                                <input class="pm-input pm-input--mono" placeholder="PRJ-XXXXX" @bind="_editProject.Uid" />
-                            </div>
-                            <div class="pm-field">
-                                <label class="pm-label">Title</label>
-                                <input class="pm-input" placeholder="Updated title" @bind="_editProject.Title" />
-                            </div>
-                            <div class="pm-field-row">
-                                <div class="pm-field">
-                                    <label class="pm-label">Priority</label>
-                                    <select class="pm-input pm-select" @bind="_editProject.Priority">
-                                        @foreach (var val in Enum.GetValues<ProjectPriorityStatus>())
-                                        {
-                                            <option value="@val">@FormatEnum(val)</option>
-                                        }
-                                    </select>
-                                </div>
-                                <div class="pm-field">
-                                    <label class="pm-label">Activity</label>
-                                    <select class="pm-input pm-select" @bind="_editProject.Activity">
-                                        @foreach (var val in Enum.GetValues<ProjectActivityStatus>())
-                                        {
-                                            <option value="@val">@FormatEnum(val)</option>
-                                        }
-                                    </select>
+                                <div class="pm-lookup-row">
+                                    <input class="pm-input pm-input--mono" placeholder="PRJ-XXXXX"
+                                           @bind="_editProjectUid" @bind:event="oninput"
+                                           @onkeydown="@(e => { if (e.Key == "Enter") LookupProject(); })" />
+                                    <button class="pm-btn pm-btn--lookup" @onclick="LookupProject" disabled="@string.IsNullOrWhiteSpace(_editProjectUid)">
+                                        Fetch
+                                    </button>
                                 </div>
                             </div>
-                            <div class="pm-field">
-                                <label class="pm-label">Key Person</label>
-                                <select class="pm-input pm-select" @bind="_editProject.KeyPerson">
-                                    @foreach (var val in Enum.GetValues<KeyPersons>())
-                                    {
-                                        <option value="@val">@val</option>
-                                    }
-                                </select>
-                            </div>
-                            <button class="pm-btn pm-btn--secondary" @onclick="EditProject" disabled="@_isSaving">
-                                @(_isSaving ? "Saving..." : "Update Project")
-                            </button>
+
+                            @if (_projectLookupDone)
+                            {
+                                @if (_editProject is null)
+                                {
+                                    <div class="pm-lookup-notfound">No project found with that UID.</div>
+                                }
+                                else
+                                {
+                                    <div class="pm-lookup-found">
+                                        <span class="pm-lookup-found-icon">✓</span> Loaded: <strong>@_editProject.Title</strong>
+                                    </div>
+                                    <div class="pm-field">
+                                        <label class="pm-label">Title</label>
+                                        <input class="pm-input" @bind="_editProject.Title" />
+                                    </div>
+                                    <div class="pm-field-row">
+                                        <div class="pm-field">
+                                            <label class="pm-label">Priority</label>
+                                            <select class="pm-input pm-select" @bind="_editProject.Priority">
+                                                @foreach (var val in Enum.GetValues<ProjectPriorityStatus>())
+                                                {
+                                                    <option value="@val">@FormatEnum(val)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="pm-field">
+                                            <label class="pm-label">Activity</label>
+                                            <select class="pm-input pm-select" @bind="_editProject.Activity">
+                                                @foreach (var val in Enum.GetValues<ProjectActivityStatus>())
+                                                {
+                                                    <option value="@val">@FormatEnum(val)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="pm-field">
+                                        <label class="pm-label">Key Person</label>
+                                        <select class="pm-input pm-select" @bind="_editProject.KeyPerson">
+                                            @foreach (var val in Enum.GetValues<KeyPersons>())
+                                            {
+                                                <option value="@val">@val</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <button class="pm-btn pm-btn--secondary" @onclick="EditProject" disabled="@_isSaving">
+                                        @(_isSaving ? "Saving..." : "Update Project")
+                                    </button>
+                                }
+                            }
                         </div>
                     }
                 </div>
@@ -133,8 +154,8 @@
             {
                 <div class="pm-form-section">
                     <div class="pm-form-mode-toggle">
-                        <button class="pm-mode-btn @(_devMode == FormMode.Add ? "active" : "")" @onclick='() => _devMode = FormMode.Add'>+ Add New</button>
-                        <button class="pm-mode-btn @(_devMode == FormMode.Edit ? "active" : "")" @onclick='() => _devMode = FormMode.Edit'>✎ Edit</button>
+                        <button class="pm-mode-btn @(_devMode == FormMode.Add ? "active" : "")" @onclick='() => SwitchDevMode(FormMode.Add)'>+ Add New</button>
+                        <button class="pm-mode-btn @(_devMode == FormMode.Edit ? "active" : "")" @onclick='() => SwitchDevMode(FormMode.Edit)'>✎ Edit</button>
                     </div>
 
                     @if (_devMode == FormMode.Add)
@@ -165,37 +186,36 @@
                                 </div>
                             </div>
                             <div class="pm-field">
-                                <label class="pm-label">Projects</label>
+                                <label class="pm-label">Project Assignments</label>
                                 @if (!_allProjects.Any())
                                 {
                                     <p class="pm-item-sub">No projects available. Add a project first.</p>
                                 }
                                 else
                                 {
-                                    <select class="pm-input pm-select pm-select--multi" multiple @onchange="e => HandleNewDevProjectsChange(e)">
-                                        @foreach (var project in _allProjects)
-                                        {
-                                            <option value="@project.Uid">@project.Title</option>
-                                        }
-                                    </select>
-                                    @if (_newDevSelectedProjects.Any())
+                                    @foreach (var assignment in _newDevAssignments)
                                     {
-                                        <p class="pm-item-sub">@_newDevSelectedProjects.Count selected</p>
+                                        var a = assignment;
+                                        <div class="pm-assignment-row">
+                                            <select class="pm-input pm-select pm-select--assignment" @bind="a.ProjectUid">
+                                                <option value="">— Select Project —</option>
+                                                @foreach (var proj in _allProjects)
+                                                {
+                                                    <option value="@proj.Uid">@proj.Title</option>
+                                                }
+                                            </select>
+                                            <select class="pm-input pm-select pm-select--exposure" @bind="a.ProjectExposure">
+                                                @foreach (var val in Enum.GetValues<DeveloperProjectExposureStatus>())
+                                                {
+                                                    <option value="@val.ToString()">@FormatEnum(val)</option>
+                                                }
+                                            </select>
+                                            <button class="pm-btn-icon pm-btn-icon--remove" @onclick="() => _newDevAssignments.Remove(a)">✕</button>
+                                        </div>
                                     }
+                                    <button class="pm-btn pm-btn--ghost pm-btn--sm" @onclick="() => _newDevAssignments.Add(new ProjectAssignment())">+ Add Project</button>
                                 }
                             </div>
-                            @if (_newDevSelectedProjects.Any())
-                            {
-                                <div class="pm-field">
-                                    <label class="pm-label">Project Exposure</label>
-                                    <select class="pm-input pm-select" @bind="_newDev.ProjectExposure">
-                                        @foreach (var val in Enum.GetValues<DeveloperProjectExposureStatus>())
-                                        {
-                                            <option value="@val">@FormatEnum(val)</option>
-                                        }
-                                    </select>
-                                </div>
-                            }
                             <button class="pm-btn pm-btn--primary" @onclick="AddDeveloper" disabled="@_isSaving">
                                 @(_isSaving ? "Saving..." : "Add Developer")
                             </button>
@@ -206,67 +226,87 @@
                         <div class="pm-form">
                             <div class="pm-field">
                                 <label class="pm-label">UID <span class="pm-required">*</span></label>
-                                <input class="pm-input pm-input--mono" placeholder="DEV-XXXXX" @bind="_editDev.Uid" />
-                            </div>
-                            <div class="pm-field">
-                                <label class="pm-label">Name</label>
-                                <input class="pm-input" placeholder="Updated name" @bind="_editDev.Name" />
-                            </div>
-                            <div class="pm-field-row">
-                                <div class="pm-field">
-                                    <label class="pm-label">Workload</label>
-                                    <select class="pm-input pm-select" @bind="_editDev.Workload">
-                                        @foreach (var val in Enum.GetValues<DeveloperWorkloadStatus>())
-                                        {
-                                            <option value="@val">@FormatEnum(val)</option>
-                                        }
-                                    </select>
-                                </div>
-                                <div class="pm-field">
-                                    <label class="pm-label">Health</label>
-                                    <select class="pm-input pm-select" @bind="_editDev.Health">
-                                        @foreach (var val in Enum.GetValues<DeveloperHealthStatus>())
-                                        {
-                                            <option value="@val">@val</option>
-                                        }
-                                    </select>
+                                <div class="pm-lookup-row">
+                                    <input class="pm-input pm-input--mono" placeholder="DEV-XXXXX"
+                                           @bind="_editDevUid" @bind:event="oninput"
+                                           @onkeydown="@(e => { if (e.Key == "Enter") LookupDeveloper(); })" />
+                                    <button class="pm-btn pm-btn--lookup" @onclick="LookupDeveloper" disabled="@string.IsNullOrWhiteSpace(_editDevUid)">
+                                        Fetch
+                                    </button>
                                 </div>
                             </div>
-                            <div class="pm-field">
-                                <label class="pm-label">Projects</label>
-                                @if (!_allProjects.Any())
+
+                            @if (_devLookupDone)
+                            {
+                                @if (_editDev is null)
                                 {
-                                    <p class="pm-item-sub">No projects available. Add a project first.</p>
+                                    <div class="pm-lookup-notfound">No developer found with that UID.</div>
                                 }
                                 else
                                 {
-                                    <select class="pm-input pm-select pm-select--multi" multiple @onchange="e => HandleEditDevProjectsChange(e)">
-                                        @foreach (var project in _allProjects)
+                                    <div class="pm-lookup-found">
+                                        <span class="pm-lookup-found-icon">✓</span> Loaded: <strong>@_editDev.Name</strong>
+                                    </div>
+                                    <div class="pm-field">
+                                        <label class="pm-label">Name</label>
+                                        <input class="pm-input" @bind="_editDev.Name" />
+                                    </div>
+                                    <div class="pm-field-row">
+                                        <div class="pm-field">
+                                            <label class="pm-label">Workload</label>
+                                            <select class="pm-input pm-select" @bind="_editDev.Workload">
+                                                @foreach (var val in Enum.GetValues<DeveloperWorkloadStatus>())
+                                                {
+                                                    <option value="@val">@FormatEnum(val)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="pm-field">
+                                            <label class="pm-label">Health</label>
+                                            <select class="pm-input pm-select" @bind="_editDev.Health">
+                                                @foreach (var val in Enum.GetValues<DeveloperHealthStatus>())
+                                                {
+                                                    <option value="@val">@val</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="pm-field">
+                                        <label class="pm-label">Project Assignments</label>
+                                        @if (!_allProjects.Any())
                                         {
-                                            <option value="@project.Uid" selected="@(_editDevSelectedProjects.Contains(project.Uid))">@project.Title</option>
+                                            <p class="pm-item-sub">No projects available.</p>
                                         }
-                                    </select>
-                                    @if (_editDevSelectedProjects.Any())
-                                    {
-                                        <p class="pm-item-sub">@_editDevSelectedProjects.Count selected</p>
-                                    }
+                                        else
+                                        {
+                                            @foreach (var assignment in _editDevAssignments)
+                                            {
+                                                var a = assignment;
+                                                <div class="pm-assignment-row">
+                                                    <select class="pm-input pm-select pm-select--assignment" @bind="a.ProjectUid">
+                                                        <option value="">— Select Project —</option>
+                                                        @foreach (var proj in _allProjects)
+                                                        {
+                                                            <option value="@proj.Uid">@proj.Title</option>
+                                                        }
+                                                    </select>
+                                                    <select class="pm-input pm-select pm-select--exposure" @bind="a.ProjectExposure">
+                                                        @foreach (var val in Enum.GetValues<DeveloperProjectExposureStatus>())
+                                                        {
+                                                            <option value="@val.ToString()">@FormatEnum(val)</option>
+                                                        }
+                                                    </select>
+                                                    <button class="pm-btn-icon pm-btn-icon--remove" @onclick="() => _editDevAssignments.Remove(a)">✕</button>
+                                                </div>
+                                            }
+                                            <button class="pm-btn pm-btn--ghost pm-btn--sm" @onclick="() => _editDevAssignments.Add(new ProjectAssignment())">+ Add Project</button>
+                                        }
+                                    </div>
+                                    <button class="pm-btn pm-btn--secondary" @onclick="EditDeveloper" disabled="@_isSaving">
+                                        @(_isSaving ? "Saving..." : "Update Developer")
+                                    </button>
                                 }
-                            </div>
-                            @if (_editDevSelectedProjects.Any())
-                            {
-                                <div class="pm-field">
-                                    <label class="pm-label">Project Exposure</label>
-                                    <select class="pm-input pm-select" @bind="_editDev.ProjectExposure">
-                                        @foreach (var val in Enum.GetValues<DeveloperProjectExposureStatus>())
-                                        {
-                                            <option value="@val">@FormatEnum(val)</option>
-                                        }
-                                    </select>
-                                </div>
                             }
-                            <button class="pm-btn pm-btn--secondary" @onclick="EditDeveloper" disabled="@_isSaving">
-                                @(_isSaving ? "Saving..." : "Update Developer")
-                            </button>
                         </div>
                     }
                 </div>
@@ -276,8 +316,8 @@
             {
                 <div class="pm-form-section">
                     <div class="pm-form-mode-toggle">
-                        <button class="pm-mode-btn @(_workItemMode == FormMode.Add ? "active" : "")" @onclick='() => _workItemMode = FormMode.Add'>+ Add New</button>
-                        <button class="pm-mode-btn @(_workItemMode == FormMode.Edit ? "active" : "")" @onclick='() => _workItemMode = FormMode.Edit'>✎ Edit</button>
+                        <button class="pm-mode-btn @(_workItemMode == FormMode.Add ? "active" : "")" @onclick='() => SwitchWorkItemMode(FormMode.Add)'>+ Add New</button>
+                        <button class="pm-mode-btn @(_workItemMode == FormMode.Edit ? "active" : "")" @onclick='() => SwitchWorkItemMode(FormMode.Edit)'>✎ Edit</button>
                     </div>
 
                     @if (_workItemMode == FormMode.Add)
@@ -288,10 +328,27 @@
                                 <input class="pm-input" placeholder="e.g. https://dev.azure.com/..." @bind="_newWorkItem.Reference" />
                             </div>
                             <div class="pm-field">
+                                <label class="pm-label">Project</label>
+                                @if (!_allProjects.Any())
+                                {
+                                    <p class="pm-item-sub">No projects available.</p>
+                                }
+                                else
+                                {
+                                    <select class="pm-input pm-select" @bind="_newWorkItem.ProjectUid">
+                                        <option value="">— Unassigned —</option>
+                                        @foreach (var proj in _allProjects)
+                                        {
+                                            <option value="@proj.Uid">@proj.Title</option>
+                                        }
+                                    </select>
+                                }
+                            </div>
+                            <div class="pm-field">
                                 <label class="pm-label">Developer</label>
                                 @if (!_allDevelopers.Any())
                                 {
-                                    <p class="pm-item-sub">No developers available. Add a developer first.</p>
+                                    <p class="pm-item-sub">No developers available.</p>
                                 }
                                 else
                                 {
@@ -326,44 +383,79 @@
                         <div class="pm-form">
                             <div class="pm-field">
                                 <label class="pm-label">UID <span class="pm-required">*</span></label>
-                                <input class="pm-input pm-input--mono" placeholder="WRK-XXXXX" @bind="_editWorkItem.Uid" />
+                                <div class="pm-lookup-row">
+                                    <input class="pm-input pm-input--mono" placeholder="WRK-XXXXX"
+                                           @bind="_editWorkItemUid" @bind:event="oninput"
+                                           @onkeydown="@(e => { if (e.Key == "Enter") LookupWorkItem(); })" />
+                                    <button class="pm-btn pm-btn--lookup" @onclick="LookupWorkItem" disabled="@string.IsNullOrWhiteSpace(_editWorkItemUid)">
+                                        Fetch
+                                    </button>
+                                </div>
                             </div>
-                            <div class="pm-field">
-                                <label class="pm-label">Reference</label>
-                                <input class="pm-input" placeholder="Updated reference" @bind="_editWorkItem.Reference" />
-                            </div>
-                            <div class="pm-field">
-                                <label class="pm-label">Developer</label>
-                                @if (!_allDevelopers.Any())
+
+                            @if (_workItemLookupDone)
+                            {
+                                @if (_editWorkItem is null)
                                 {
-                                    <p class="pm-item-sub">No developers available. Add a developer first.</p>
+                                    <div class="pm-lookup-notfound">No work item found with that UID.</div>
                                 }
                                 else
                                 {
-                                    <select class="pm-input pm-select" @bind="_editWorkItem.Developer">
-                                        <option value="">— Unassigned —</option>
-                                        @foreach (var dev in _allDevelopers)
+                                    <div class="pm-lookup-found">
+                                        <span class="pm-lookup-found-icon">✓</span> Loaded: <strong class="pm-font-mono">@_editWorkItem.Uid</strong>
+                                    </div>
+                                    <div class="pm-field">
+                                        <label class="pm-label">Reference</label>
+                                        <input class="pm-input" @bind="_editWorkItem.Reference" />
+                                    </div>
+                                    <div class="pm-field">
+                                        <label class="pm-label">Project</label>
+                                        @if (!_allProjects.Any())
                                         {
-                                            <option value="@dev.Name">@dev.Name</option>
+                                            <p class="pm-item-sub">No projects available.</p>
                                         }
-                                    </select>
+                                        else
+                                        {
+                                            <select class="pm-input pm-select" @bind="_editWorkItem.ProjectUid">
+                                                <option value="">— Unassigned —</option>
+                                                @foreach (var proj in _allProjects)
+                                                {
+                                                    <option value="@proj.Uid">@proj.Title</option>
+                                                }
+                                            </select>
+                                        }
+                                    </div>
+                                    <div class="pm-field">
+                                        <label class="pm-label">Developer</label>
+                                        @if (!_allDevelopers.Any())
+                                        {
+                                            <p class="pm-item-sub">No developers available.</p>
+                                        }
+                                        else
+                                        {
+                                            <select class="pm-input pm-select" @bind="_editWorkItem.Developer">
+                                                <option value="">— Unassigned —</option>
+                                                @foreach (var dev in _allDevelopers)
+                                                {
+                                                    <option value="@dev.Name">@dev.Name</option>
+                                                }
+                                            </select>
+                                        }
+                                    </div>
+                                    <div class="pm-field">
+                                        <label class="pm-label">Status</label>
+                                        <select class="pm-input pm-select" @bind="_editWorkItem.Status">
+                                            @foreach (var val in Enum.GetValues<WorkItemStatus>())
+                                            {
+                                                <option value="@val">@FormatEnum(val)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <button class="pm-btn pm-btn--secondary" @onclick="EditWorkItem" disabled="@_isSaving">
+                                        @(_isSaving ? "Saving..." : "Update Work Item")
+                                    </button>
                                 }
-                            </div>
-                            @if (!string.IsNullOrEmpty(_editWorkItem.Developer))
-                            {
-                                <div class="pm-field">
-                                    <label class="pm-label">Status</label>
-                                    <select class="pm-input pm-select" @bind="_editWorkItem.Status">
-                                        @foreach (var val in Enum.GetValues<WorkItemStatus>())
-                                        {
-                                            <option value="@val">@FormatEnum(val)</option>
-                                        }
-                                    </select>
-                                </div>
                             }
-                            <button class="pm-btn pm-btn--secondary" @onclick="EditWorkItem" disabled="@_isSaving">
-                                @(_isSaving ? "Saving..." : "Update Work Item")
-                            </button>
                         </div>
                     }
                 </div>
@@ -392,15 +484,24 @@
     private List<Project> _allProjects = [];
     private List<Developer> _allDevelopers = [];
 
-    private HashSet<string> _newDevSelectedProjects = [];
-    private HashSet<string> _editDevSelectedProjects = [];
-
     private Project _newProject = new();
-    private Project _editProject = new();
     private Developer _newDev = new();
-    private Developer _editDev = new();
     private WorkItem _newWorkItem = new();
-    private WorkItem _editWorkItem = new();
+
+    private List<ProjectAssignment> _newDevAssignments = [];
+    private List<ProjectAssignment> _editDevAssignments = [];
+
+    private string _editProjectUid = string.Empty;
+    private string _editDevUid = string.Empty;
+    private string _editWorkItemUid = string.Empty;
+
+    private Project? _editProject = null;
+    private Developer? _editDev = null;
+    private WorkItem? _editWorkItem = null;
+
+    private bool _projectLookupDone = false;
+    private bool _devLookupDone = false;
+    private bool _workItemLookupDone = false;
 
     protected override void OnInitialized()
     {
@@ -416,21 +517,102 @@
         _errorMsg   = string.Empty;
     }
 
+    private void SwitchProjectMode(FormMode mode)
+    {
+        _projectMode        = mode;
+        _editProjectUid     = string.Empty;
+        _editProject        = null;
+        _projectLookupDone  = false;
+        _successMsg         = string.Empty;
+        _errorMsg           = string.Empty;
+    }
+
+    private void SwitchDevMode(FormMode mode)
+    {
+        _devMode            = mode;
+        _editDevUid         = string.Empty;
+        _editDev            = null;
+        _editDevAssignments = [];
+        _devLookupDone      = false;
+        _successMsg         = string.Empty;
+        _errorMsg           = string.Empty;
+    }
+
+    private void SwitchWorkItemMode(FormMode mode)
+    {
+        _workItemMode        = mode;
+        _editWorkItemUid     = string.Empty;
+        _editWorkItem        = null;
+        _workItemLookupDone  = false;
+        _successMsg          = string.Empty;
+        _errorMsg            = string.Empty;
+    }
+
+    private void LookupProject()
+    {
+        _projectLookupDone = true;
+        _successMsg        = string.Empty;
+        _errorMsg          = string.Empty;
+        var found = _allProjects.FirstOrDefault(p => p.Uid.Equals(_editProjectUid.Trim(), StringComparison.OrdinalIgnoreCase));
+        _editProject = found is null ? null : new Project
+        {
+            Uid       = found.Uid,
+            Title     = found.Title,
+            Priority  = found.Priority,
+            Activity  = found.Activity,
+            KeyPerson = found.KeyPerson
+        };
+    }
+
+    private void LookupDeveloper()
+    {
+        _devLookupDone = true;
+        _successMsg    = string.Empty;
+        _errorMsg      = string.Empty;
+        var found = _allDevelopers.FirstOrDefault(d => d.Uid.Equals(_editDevUid.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (found is null)
+        {
+            _editDev            = null;
+            _editDevAssignments = [];
+        }
+        else
+        {
+            _editDev = new Developer
+            {
+                Uid         = found.Uid,
+                Name        = found.Name,
+                Workload    = found.Workload,
+                Health      = found.Health,
+                Assignments = found.Assignments.Select(a => new ProjectAssignment
+                {
+                    ProjectUid      = a.ProjectUid,
+                    ProjectExposure = a.ProjectExposure
+                }).ToList(),
+                ImagePath = found.ImagePath
+            };
+            _editDevAssignments = _editDev.Assignments;
+        }
+    }
+
+    private void LookupWorkItem()
+    {
+        _workItemLookupDone = true;
+        _successMsg         = string.Empty;
+        _errorMsg           = string.Empty;
+        var data = AppServices.LoadAllDataSource();
+        var found = data.WorkItems.FirstOrDefault(w => w.Uid.Equals(_editWorkItemUid.Trim(), StringComparison.OrdinalIgnoreCase));
+        _editWorkItem = found is null ? null : new WorkItem
+        {
+            Uid        = found.Uid,
+            Reference  = found.Reference,
+            Developer  = found.Developer,
+            ProjectUid = found.ProjectUid,
+            Status     = found.Status
+        };
+    }
+
     private void Close() => OnClose.InvokeAsync();
     private void HandleBackdropClick() => Close();
-
-    private void HandleNewDevProjectsChange(ChangeEventArgs e)
-        => _newDevSelectedProjects = ExtractMultiSelectValues(e);
-
-    private void HandleEditDevProjectsChange(ChangeEventArgs e)
-        => _editDevSelectedProjects = ExtractMultiSelectValues(e);
-
-    private static HashSet<string> ExtractMultiSelectValues(ChangeEventArgs e) => e.Value switch
-    {
-        string[] values => [.. values],
-        string s when !string.IsNullOrEmpty(s) => [s],
-        _ => []
-    };
 
     private async Task AddProject()
     {
@@ -444,34 +626,38 @@
 
     private async Task EditProject()
     {
-        if (string.IsNullOrWhiteSpace(_editProject.Uid)) { _errorMsg = "UID is required."; return; }
+        if (_editProject is null) return;
         await SaveAsync(() => AppRepository.PatchProject(_editProject));
         AppServices.InvalidateProjectsCache();
-        _allProjects = AppServices.LoadAllDataSource().Projects;
-        _editProject = new();
+        _allProjects       = AppServices.LoadAllDataSource().Projects;
+        _editProject       = null;
+        _editProjectUid    = string.Empty;
+        _projectLookupDone = false;
     }
 
     private async Task AddDeveloper()
     {
         if (string.IsNullOrWhiteSpace(_newDev.Name)) { _errorMsg = "Name is required."; return; }
-        _newDev.Uid     = Prefixes.DeveloperPrefix.Generate();
-        _newDev.Project = [.. _newDevSelectedProjects];
+        _newDev.Uid         = Prefixes.DeveloperPrefix.Generate();
+        _newDev.Assignments = _newDevAssignments.Where(a => !string.IsNullOrEmpty(a.ProjectUid)).ToList();
         await SaveAsync(() => AppRepository.PostDeveloper(_newDev));
         AppServices.InvalidateDevelopersCache();
-        _allDevelopers          = AppServices.LoadAllDataSource().Developers;
-        _newDev                 = new();
-        _newDevSelectedProjects = [];
+        _allDevelopers      = AppServices.LoadAllDataSource().Developers;
+        _newDev             = new();
+        _newDevAssignments  = [];
     }
 
     private async Task EditDeveloper()
     {
-        if (string.IsNullOrWhiteSpace(_editDev.Uid)) { _errorMsg = "UID is required."; return; }
-        _editDev.Project = [.. _editDevSelectedProjects];
+        if (_editDev is null) return;
+        _editDev.Assignments = _editDevAssignments.Where(a => !string.IsNullOrEmpty(a.ProjectUid)).ToList();
         await SaveAsync(() => AppRepository.PatchDeveloper(_editDev));
         AppServices.InvalidateDevelopersCache();
-        _allDevelopers           = AppServices.LoadAllDataSource().Developers;
-        _editDev                 = new();
-        _editDevSelectedProjects = [];
+        _allDevelopers      = AppServices.LoadAllDataSource().Developers;
+        _editDev            = null;
+        _editDevUid         = string.Empty;
+        _editDevAssignments = [];
+        _devLookupDone      = false;
     }
 
     private async Task AddWorkItem()
@@ -485,10 +671,12 @@
 
     private async Task EditWorkItem()
     {
-        if (string.IsNullOrWhiteSpace(_editWorkItem.Uid)) { _errorMsg = "UID is required."; return; }
+        if (_editWorkItem is null) return;
         await SaveAsync(() => AppRepository.PatchWorkItem(_editWorkItem));
         AppServices.InvalidateWorkItemsCache();
-        _editWorkItem = new();
+        _editWorkItem        = null;
+        _editWorkItemUid     = string.Empty;
+        _workItemLookupDone  = false;
     }
 
     private async Task SaveAsync(Action saveAction)
