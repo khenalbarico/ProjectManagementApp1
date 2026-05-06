@@ -2,6 +2,7 @@
 
 public class DeveloperImagePaths
 {
+    public const string KhenName    = "Khen";
     public const string EliName     = "Eli";
     public const string JerrickName = "Jerrick";
     public const string LuisName    = "Luis";
@@ -10,6 +11,7 @@ public class DeveloperImagePaths
     public const string MabiName    = "Mabi";
     public const string MarlouName  = "Marlou";
 
+    public const string Khen    = "imgs/Khen.jpg";
     public const string Eli     = "imgs/Eli.jpg";
     public const string Jerrick = "imgs/Jerrick.jpg";
     public const string Luis    = "imgs/Luis.jpg";

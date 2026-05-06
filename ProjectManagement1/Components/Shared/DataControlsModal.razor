@@ -38,6 +38,7 @@
                     <div class="pm-form-mode-toggle">
                         <button class="pm-mode-btn @(_projectMode == FormMode.Add ? "active" : "")" @onclick='() => SwitchProjectMode(FormMode.Add)'>+ Add New</button>
                         <button class="pm-mode-btn @(_projectMode == FormMode.Edit ? "active" : "")" @onclick='() => SwitchProjectMode(FormMode.Edit)'>✎ Edit</button>
+                        <button class="pm-mode-btn @(_projectMode == FormMode.Delete ? "active" : "")" @onclick='() => SwitchProjectMode(FormMode.Delete)'>✕ Delete</button>
                     </div>
 
                     @if (_projectMode == FormMode.Add)
@@ -81,7 +82,7 @@
                             </button>
                         </div>
                     }
-                    else
+                    else if (_projectMode == FormMode.Edit)
                     {
                         <div class="pm-form">
                             <div class="pm-field">
@@ -147,6 +148,46 @@
                             }
                         </div>
                     }
+                    else
+                    {
+                        <div class="pm-form">
+                            <div class="pm-field">
+                                <label class="pm-label">UID <span class="pm-required">*</span></label>
+                                <div class="pm-lookup-row">
+                                    <input class="pm-input pm-input--mono" placeholder="PRJ-XXXXX"
+                                           @bind="_deleteProjectUid" @bind:event="oninput"
+                                           @onkeydown="@(e => { if (e.Key == "Enter") LookupProjectForDelete(); })" />
+                                    <button class="pm-btn pm-btn--lookup" @onclick="LookupProjectForDelete" disabled="@string.IsNullOrWhiteSpace(_deleteProjectUid)">
+                                        Fetch
+                                    </button>
+                                </div>
+                            </div>
+
+                            @if (_projectDeleteLookupDone)
+                            {
+                                @if (_deleteProject is null)
+                                {
+                                    <div class="pm-lookup-notfound">No project found with that UID.</div>
+                                }
+                                else
+                                {
+                                    <div class="pm-delete-confirm">
+                                        <div class="pm-delete-confirm-icon">⚠</div>
+                                        <div class="pm-delete-confirm-text">
+                                            <strong>@_deleteProject.Title</strong>
+                                            <span>@_deleteProject.Uid</span>
+                                        </div>
+                                    </div>
+                                    <div class="pm-alert pm-alert--error" style="margin-bottom:0;">
+                                        This will permanently remove the project. Work items linked to this project will be unaffected.
+                                    </div>
+                                    <button class="pm-btn pm-btn--danger" @onclick="DeleteProject" disabled="@_isSaving">
+                                        @(_isSaving ? "Deleting..." : "Delete Project")
+                                    </button>
+                                }
+                            }
+                        </div>
+                    }
                 </div>
             }
 
@@ -156,6 +197,7 @@
                     <div class="pm-form-mode-toggle">
                         <button class="pm-mode-btn @(_devMode == FormMode.Add ? "active" : "")" @onclick='() => SwitchDevMode(FormMode.Add)'>+ Add New</button>
                         <button class="pm-mode-btn @(_devMode == FormMode.Edit ? "active" : "")" @onclick='() => SwitchDevMode(FormMode.Edit)'>✎ Edit</button>
+                        <button class="pm-mode-btn @(_devMode == FormMode.Delete ? "active" : "")" @onclick='() => SwitchDevMode(FormMode.Delete)'>✕ Delete</button>
                     </div>
 
                     @if (_devMode == FormMode.Add)
@@ -214,7 +256,7 @@
                             </button>
                         </div>
                     }
-                    else
+                    else if (_devMode == FormMode.Edit)
                     {
                         <div class="pm-form">
                             <div class="pm-field">
@@ -295,6 +337,46 @@
                             }
                         </div>
                     }
+                    else
+                    {
+                        <div class="pm-form">
+                            <div class="pm-field">
+                                <label class="pm-label">UID <span class="pm-required">*</span></label>
+                                <div class="pm-lookup-row">
+                                    <input class="pm-input pm-input--mono" placeholder="DEV-XXXXX"
+                                           @bind="_deleteDevUid" @bind:event="oninput"
+                                           @onkeydown="@(e => { if (e.Key == "Enter") LookupDeveloperForDelete(); })" />
+                                    <button class="pm-btn pm-btn--lookup" @onclick="LookupDeveloperForDelete" disabled="@string.IsNullOrWhiteSpace(_deleteDevUid)">
+                                        Fetch
+                                    </button>
+                                </div>
+                            </div>
+
+                            @if (_devDeleteLookupDone)
+                            {
+                                @if (_deleteDev is null)
+                                {
+                                    <div class="pm-lookup-notfound">No developer found with that UID.</div>
+                                }
+                                else
+                                {
+                                    <div class="pm-delete-confirm">
+                                        <div class="pm-delete-confirm-icon">⚠</div>
+                                        <div class="pm-delete-confirm-text">
+                                            <strong>@_deleteDev.Name</strong>
+                                            <span>@_deleteDev.Uid</span>
+                                        </div>
+                                    </div>
+                                    <div class="pm-alert pm-alert--error" style="margin-bottom:0;">
+                                        This will permanently remove the developer. Work items assigned to this developer will be unaffected.
+                                    </div>
+                                    <button class="pm-btn pm-btn--danger" @onclick="DeleteDeveloper" disabled="@_isSaving">
+                                        @(_isSaving ? "Deleting..." : "Delete Developer")
+                                    </button>
+                                }
+                            }
+                        </div>
+                    }
                 </div>
             }
 
@@ -304,6 +386,7 @@
                     <div class="pm-form-mode-toggle">
                         <button class="pm-mode-btn @(_workItemMode == FormMode.Add ? "active" : "")" @onclick='() => SwitchWorkItemMode(FormMode.Add)'>+ Add New</button>
                         <button class="pm-mode-btn @(_workItemMode == FormMode.Edit ? "active" : "")" @onclick='() => SwitchWorkItemMode(FormMode.Edit)'>✎ Edit</button>
+                        <button class="pm-mode-btn @(_workItemMode == FormMode.Delete ? "active" : "")" @onclick='() => SwitchWorkItemMode(FormMode.Delete)'>✕ Delete</button>
                     </div>
 
                     @if (_workItemMode == FormMode.Add)
@@ -364,7 +447,7 @@
                             </button>
                         </div>
                     }
-                    else
+                    else if (_workItemMode == FormMode.Edit)
                     {
                         <div class="pm-form">
                             <div class="pm-field">
@@ -444,6 +527,46 @@
                             }
                         </div>
                     }
+                    else
+                    {
+                        <div class="pm-form">
+                            <div class="pm-field">
+                                <label class="pm-label">UID <span class="pm-required">*</span></label>
+                                <div class="pm-lookup-row">
+                                    <input class="pm-input pm-input--mono" placeholder="WRK-XXXXX"
+                                           @bind="_deleteWorkItemUid" @bind:event="oninput"
+                                           @onkeydown="@(e => { if (e.Key == "Enter") LookupWorkItemForDelete(); })" />
+                                    <button class="pm-btn pm-btn--lookup" @onclick="LookupWorkItemForDelete" disabled="@string.IsNullOrWhiteSpace(_deleteWorkItemUid)">
+                                        Fetch
+                                    </button>
+                                </div>
+                            </div>
+
+                            @if (_workItemDeleteLookupDone)
+                            {
+                                @if (_deleteWorkItem is null)
+                                {
+                                    <div class="pm-lookup-notfound">No work item found with that UID.</div>
+                                }
+                                else
+                                {
+                                    <div class="pm-delete-confirm">
+                                        <div class="pm-delete-confirm-icon">⚠</div>
+                                        <div class="pm-delete-confirm-text">
+                                            <strong class="pm-font-mono">@_deleteWorkItem.Uid</strong>
+                                            <span>@_deleteWorkItem.Reference</span>
+                                        </div>
+                                    </div>
+                                    <div class="pm-alert pm-alert--error" style="margin-bottom:0;">
+                                        This will permanently remove the work item.
+                                    </div>
+                                    <button class="pm-btn pm-btn--danger" @onclick="DeleteWorkItem" disabled="@_isSaving">
+                                        @(_isSaving ? "Deleting..." : "Delete Work Item")
+                                    </button>
+                                }
+                            }
+                        </div>
+                    }
                 </div>
             }
 
@@ -456,7 +579,7 @@
     [Parameter] public EventCallback OnDataChanged { get; set; }
 
     private enum Tab { Projects, Developers, WorkItems }
-    private enum FormMode { Add, Edit }
+    private enum FormMode { Add, Edit, Delete }
 
     private Tab _activeTab = Tab.Projects;
     private FormMode _projectMode = FormMode.Add;
@@ -490,6 +613,18 @@
     private bool _devLookupDone = false;
     private bool _workItemLookupDone = false;
 
+    private string _deleteProjectUid = string.Empty;
+    private string _deleteDevUid = string.Empty;
+    private string _deleteWorkItemUid = string.Empty;
+
+    private Project? _deleteProject = null;
+    private Developer? _deleteDev = null;
+    private WorkItem? _deleteWorkItem = null;
+
+    private bool _projectDeleteLookupDone = false;
+    private bool _devDeleteLookupDone = false;
+    private bool _workItemDeleteLookupDone = false;
+
     protected override void OnInitialized()
     {
         var data = AppServices.LoadAllDataSource();
@@ -507,33 +642,42 @@
 
     private void SwitchProjectMode(FormMode mode)
     {
-        _projectMode       = mode;
-        _editProjectUid    = string.Empty;
-        _editProject       = null;
-        _projectLookupDone = false;
-        _successMsg        = string.Empty;
-        _errorMsg          = string.Empty;
+        _projectMode            = mode;
+        _editProjectUid         = string.Empty;
+        _editProject            = null;
+        _projectLookupDone      = false;
+        _deleteProjectUid       = string.Empty;
+        _deleteProject          = null;
+        _projectDeleteLookupDone = false;
+        _successMsg             = string.Empty;
+        _errorMsg               = string.Empty;
     }
 
     private void SwitchDevMode(FormMode mode)
     {
-        _devMode            = mode;
-        _editDevUid         = string.Empty;
-        _editDev            = null;
-        _editDevAssignments = [];
-        _devLookupDone      = false;
-        _successMsg         = string.Empty;
-        _errorMsg           = string.Empty;
+        _devMode               = mode;
+        _editDevUid            = string.Empty;
+        _editDev               = null;
+        _editDevAssignments    = [];
+        _devLookupDone         = false;
+        _deleteDevUid          = string.Empty;
+        _deleteDev             = null;
+        _devDeleteLookupDone   = false;
+        _successMsg            = string.Empty;
+        _errorMsg              = string.Empty;
     }
 
     private void SwitchWorkItemMode(FormMode mode)
     {
-        _workItemMode       = mode;
-        _editWorkItemUid    = string.Empty;
-        _editWorkItem       = null;
-        _workItemLookupDone = false;
-        _successMsg         = string.Empty;
-        _errorMsg           = string.Empty;
+        _workItemMode              = mode;
+        _editWorkItemUid           = string.Empty;
+        _editWorkItem              = null;
+        _workItemLookupDone        = false;
+        _deleteWorkItemUid         = string.Empty;
+        _deleteWorkItem            = null;
+        _workItemDeleteLookupDone  = false;
+        _successMsg                = string.Empty;
+        _errorMsg                  = string.Empty;
     }
 
     private void LookupProject()
@@ -550,6 +694,14 @@
             Activity  = found.Activity,
             KeyPerson = found.KeyPerson
         };
+    }
+
+    private void LookupProjectForDelete()
+    {
+        _projectDeleteLookupDone = true;
+        _successMsg              = string.Empty;
+        _errorMsg                = string.Empty;
+        _deleteProject = _allProjects.FirstOrDefault(p => p.Uid.Equals(_deleteProjectUid.Trim(), StringComparison.OrdinalIgnoreCase));
     }
 
     private void LookupDeveloper()
@@ -582,6 +734,14 @@
         }
     }
 
+    private void LookupDeveloperForDelete()
+    {
+        _devDeleteLookupDone = true;
+        _successMsg          = string.Empty;
+        _errorMsg            = string.Empty;
+        _deleteDev = _allDevelopers.FirstOrDefault(d => d.Uid.Equals(_deleteDevUid.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
     private void LookupWorkItem()
     {
         _workItemLookupDone = true;
@@ -597,6 +757,15 @@
             ProjectUid = found.ProjectUid,
             Status     = found.Status
         };
+    }
+
+    private void LookupWorkItemForDelete()
+    {
+        _workItemDeleteLookupDone = true;
+        _successMsg               = string.Empty;
+        _errorMsg                 = string.Empty;
+        var data = AppServices.LoadAllDataSource();
+        _deleteWorkItem = data.WorkItems.FirstOrDefault(w => w.Uid.Equals(_deleteWorkItemUid.Trim(), StringComparison.OrdinalIgnoreCase));
     }
 
     private void Close() => OnClose.InvokeAsync();
@@ -633,6 +802,17 @@
         _editProject       = null;
         _editProjectUid    = string.Empty;
         _projectLookupDone = false;
+    }
+
+    private async Task DeleteProject()
+    {
+        if (_deleteProject is null) return;
+        await SaveAsync(() => AppRepository.DeleteProject(_deleteProject.Uid));
+        AppServices.InvalidateProjectsCache();
+        _allProjects             = AppServices.LoadAllDataSource().Projects;
+        _deleteProject           = null;
+        _deleteProjectUid        = string.Empty;
+        _projectDeleteLookupDone = false;
     }
 
     private async Task AddDeveloper()
@@ -672,13 +852,24 @@
         _devLookupDone      = false;
     }
 
+    private async Task DeleteDeveloper()
+    {
+        if (_deleteDev is null) return;
+        await SaveAsync(() => AppRepository.DeleteDeveloper(_deleteDev.Uid));
+        AppServices.InvalidateDevelopersCache();
+        _allDevelopers       = AppServices.LoadAllDataSource().Developers;
+        _deleteDev           = null;
+        _deleteDevUid        = string.Empty;
+        _devDeleteLookupDone = false;
+    }
+
     private async Task AddWorkItem()
     {
         if (string.IsNullOrWhiteSpace(_newWorkItem.Reference)) { _errorMsg = "Reference is required."; return; }
         var refTrimmed = _newWorkItem.Reference.Trim();
         if (_allWorkItems.Any(w => w.Reference.Equals(refTrimmed, StringComparison.OrdinalIgnoreCase)))
         {
-            _errorMsg = $"A work item with that reference already exists.";
+            _errorMsg = "A work item with that reference already exists.";
             return;
         }
         _newWorkItem.Uid = Prefixes.WorkitemPrefix.Generate();
@@ -694,7 +885,7 @@
         var refTrimmed = _editWorkItem.Reference.Trim();
         if (_allWorkItems.Any(w => w.Reference.Equals(refTrimmed, StringComparison.OrdinalIgnoreCase) && w.Uid != _editWorkItem.Uid))
         {
-            _errorMsg = $"Another work item with that reference already exists.";
+            _errorMsg = "Another work item with that reference already exists.";
             return;
         }
         await SaveAsync(() => AppRepository.PatchWorkItem(_editWorkItem));
@@ -703,6 +894,17 @@
         _editWorkItem       = null;
         _editWorkItemUid    = string.Empty;
         _workItemLookupDone = false;
+    }
+
+    private async Task DeleteWorkItem()
+    {
+        if (_deleteWorkItem is null) return;
+        await SaveAsync(() => AppRepository.DeleteWorkItem(_deleteWorkItem.Uid));
+        AppServices.InvalidateWorkItemsCache();
+        _allWorkItems             = AppServices.LoadAllDataSource().WorkItems;
+        _deleteWorkItem           = null;
+        _deleteWorkItemUid        = string.Empty;
+        _workItemDeleteLookupDone = false;
     }
 
     private async Task SaveAsync(Action saveAction)

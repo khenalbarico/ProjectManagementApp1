@@ -84,13 +84,13 @@ public class AppRepository : IAppRepository
 
     static string ResolveDeveloperImagePath(string name) => name switch
     {
-        DeveloperImagePaths.EliName     => DeveloperImagePaths.Eli,
+        DeveloperImagePaths.EliName => DeveloperImagePaths.Eli,
         DeveloperImagePaths.JerrickName => DeveloperImagePaths.Jerrick,
-        DeveloperImagePaths.LuisName    => DeveloperImagePaths.Luis,
-        DeveloperImagePaths.MarcusName  => DeveloperImagePaths.Marcus,
-        DeveloperImagePaths.PoloName    => DeveloperImagePaths.Polo,
-        DeveloperImagePaths.MabiName    => DeveloperImagePaths.Mabi,
-        DeveloperImagePaths.MarlouName  => DeveloperImagePaths.Marlou,
+        DeveloperImagePaths.LuisName => DeveloperImagePaths.Luis,
+        DeveloperImagePaths.MarcusName => DeveloperImagePaths.Marcus,
+        DeveloperImagePaths.PoloName => DeveloperImagePaths.Polo,
+        DeveloperImagePaths.MabiName => DeveloperImagePaths.Mabi,
+        DeveloperImagePaths.MarlouName => DeveloperImagePaths.Marlou,
         _ => ""
     };
 
@@ -215,6 +215,51 @@ public class AppRepository : IAppRepository
             row.Cell(4).Value = payload.ProjectUid;
             row.Cell(5).Value = payload.Status.ToString();
 
+            break;
+        }
+
+        workbook.Save();
+    }
+
+    public void DeleteProject(string uid)
+    {
+        using var workbook = new XLWorkbook(DataSource.FilePath);
+        var sheet = workbook.Worksheet("Projects");
+
+        foreach (var row in sheet.RowsUsed().Skip(1))
+        {
+            if (row.Cell(1).GetString().Trim() != uid) continue;
+            row.Delete();
+            break;
+        }
+
+        workbook.Save();
+    }
+
+    public void DeleteDeveloper(string uid)
+    {
+        using var workbook = new XLWorkbook(DataSource.FilePath);
+        var sheet = workbook.Worksheet("Developers");
+
+        foreach (var row in sheet.RowsUsed().Skip(1))
+        {
+            if (row.Cell(1).GetString().Trim() != uid) continue;
+            row.Delete();
+            break;
+        }
+
+        workbook.Save();
+    }
+
+    public void DeleteWorkItem(string uid)
+    {
+        using var workbook = new XLWorkbook(DataSource.FilePath);
+        var sheet = workbook.Worksheet("Work Items");
+
+        foreach (var row in sheet.RowsUsed().Skip(1))
+        {
+            if (row.Cell(1).GetString().Trim() != uid) continue;
+            row.Delete();
             break;
         }
 

@@ -16,9 +16,11 @@
     {
         <header class="pm-header">
             <div class="pm-header-left">
-                <div class="pm-logo-mark"></div>
+                <img src="@DeveloperImagePaths.Khen"
+                     alt="@DeveloperImagePaths.KhenName"
+                     class="pm-logo-mark" />
                 <div>
-                    <h1 class="pm-title">Workspace</h1>
+                    <h1 class="pm-title">Mngr. Khen</h1>
                     <p class="pm-subtitle">Project Management Dashboard</p>
                 </div>
             </div>
@@ -48,6 +50,12 @@
                         <span class="pm-card-icon pm-card-icon--projects">◈</span>
                         <h2 class="pm-card-title">Projects</h2>
                         <span class="pm-badge">@FilteredProjects.Count</span>
+                    </div>
+                    <div class="pm-search-row">
+                        <input class="pm-search-input" placeholder="Search by title..." @bind="_projSearch" @bind:event="oninput" />
+                        <button class="pm-sort-btn @(_projSortAsc ? "pm-sort-btn--asc" : "pm-sort-btn--desc")" @onclick="() => _projSortAsc = !_projSortAsc" title="Sort A-Z / Z-A">
+                            ⇅
+                        </button>
                     </div>
                     <div class="pm-filter-row">
                         <button class="pm-filter-chip @(_projActivityFilter == null ? "pm-filter-chip--active" : "")" @onclick='() => _projActivityFilter = null'>All</button>
@@ -97,6 +105,12 @@
                         <span class="pm-card-icon pm-card-icon--developers">⬡</span>
                         <h2 class="pm-card-title">Developers</h2>
                         <span class="pm-badge">@FilteredDevelopers.Count</span>
+                    </div>
+                    <div class="pm-search-row">
+                        <input class="pm-search-input" placeholder="Search by name..." @bind="_devSearch" @bind:event="oninput" />
+                        <button class="pm-sort-btn @(_devSortAsc ? "pm-sort-btn--asc" : "pm-sort-btn--desc")" @onclick="() => _devSortAsc = !_devSortAsc" title="Sort A-Z / Z-A">
+                            ⇅
+                        </button>
                     </div>
                     <div class="pm-filter-row">
                         <button class="pm-filter-chip @(_devHealthFilter == null ? "pm-filter-chip--active" : "")" @onclick='() => _devHealthFilter = null'>All</button>
@@ -250,7 +264,8 @@
                    AllProjects="@_projects"
                    AllDevelopers="@_developers"
                    AllWorkItems="@_workItems"
-                   OnClose="@(() => StateHasChanged())" />
+                   OnClose="@(() => StateHasChanged())"
+                   OnDataChanged="RefreshData" />
 
 <DataControlsFloat OnDataChanged="RefreshData" />
 
@@ -264,26 +279,46 @@
 
     private ProjectActivityStatus? _projActivityFilter = null;
     private ProjectPriorityStatus? _projPriorityFilter = null;
+    private string _projSearch = string.Empty;
+    private bool _projSortAsc = true;
 
     private DeveloperHealthStatus? _devHealthFilter = null;
     private DeveloperWorkloadStatus? _devWorkloadFilter = null;
     private int _devMinProjects = 0;
     private int _devMinWorkItems = 0;
+    private string _devSearch = string.Empty;
+    private bool _devSortAsc = true;
 
     private int _maxDevProjects => _developers.Any() ? _developers.Max(d => d.Assignments.Count) : 0;
     private int _maxDevWorkItems => _developers.Any() ? _developers.Max(d => _workItems.Count(w => w.Developer == d.Name)) : 0;
 
-    private List<Project> FilteredProjects => _projects
-        .Where(p => _projActivityFilter == null || p.Activity == _projActivityFilter)
-        .Where(p => _projPriorityFilter == null || p.Priority == _projPriorityFilter)
-        .ToList();
+    private List<Project> FilteredProjects
+    {
+        get
+        {
+            var q = _projects
+                .Where(p => _projActivityFilter == null || p.Activity == _projActivityFilter)
+                .Where(p => _projPriorityFilter == null || p.Priority == _projPriorityFilter)
+                .Where(p => string.IsNullOrWhiteSpace(_projSearch) || p.Title.Contains(_projSearch, StringComparison.OrdinalIgnoreCase));
+            q = _projSortAsc ? q.OrderBy(p => p.Title) : q.OrderByDescending(p => p.Title);
+            return q.ToList();
+        }
+    }
 
-    private List<Developer> FilteredDevelopers => _developers
-        .Where(d => _devHealthFilter == null || d.Health == _devHealthFilter)
-        .Where(d => _devWorkloadFilter == null || d.Workload == _devWorkloadFilter)
-        .Where(d => d.Assignments.Count >= _devMinProjects)
-        .Where(d => _workItems.Count(w => w.Developer == d.Name) >= _devMinWorkItems)
-        .ToList();
+    private List<Developer> FilteredDevelopers
+    {
+        get
+        {
+            var q = _developers
+                .Where(d => _devHealthFilter == null || d.Health == _devHealthFilter)
+                .Where(d => _devWorkloadFilter == null || d.Workload == _devWorkloadFilter)
+                .Where(d => d.Assignments.Count >= _devMinProjects)
+                .Where(d => _workItems.Count(w => w.Developer == d.Name) >= _devMinWorkItems)
+                .Where(d => string.IsNullOrWhiteSpace(_devSearch) || d.Name.Contains(_devSearch, StringComparison.OrdinalIgnoreCase));
+            q = _devSortAsc ? q.OrderBy(d => d.Name) : q.OrderByDescending(d => d.Name);
+            return q.ToList();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

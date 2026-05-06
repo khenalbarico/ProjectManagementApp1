@@ -10,5 +10,8 @@ public interface IAppRepository
     void PatchDeveloper(Developer payload);
     void PatchProject(Project payload);
     void PatchWorkItem(WorkItem payload);
+    void DeleteProject(string uid);
+    void DeleteDeveloper(string uid);
+    void DeleteWorkItem(string uid);
     TResult LoadDatasource<TResult>();
 }
