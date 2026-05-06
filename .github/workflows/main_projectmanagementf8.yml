@@ -52,4 +52,4 @@ jobs:
           app-name: 'ProjectManagementF8'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_20663E15E8AD4FC89C219CA1C183B53C }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3DC807120CB845598B7DFD6F2455055F }}
