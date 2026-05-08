@@ -1,5 +1,7 @@
 ﻿@page "/"
 @inject IAppServices AppServices
+@inject IAppAuthentication AppAuthentication
+@inject NavigationManager Nav
 
 <PageTitle>Project Management</PageTitle>
 
@@ -24,21 +26,24 @@
                     <p class="pm-subtitle">Project Management Dashboard</p>
                 </div>
             </div>
-            <div class="pm-header-stats">
-                <div class="pm-stat">
-                    <span class="pm-stat-value">@_projects.Count</span>
-                    <span class="pm-stat-label">Projects</span>
+            <div class="pm-header-right">
+                <div class="pm-header-stats">
+                    <div class="pm-stat">
+                        <span class="pm-stat-value">@_projects.Count</span>
+                        <span class="pm-stat-label">Projects</span>
+                    </div>
+                    <div class="pm-stat-divider"></div>
+                    <div class="pm-stat">
+                        <span class="pm-stat-value">@VisibleDevelopers.Count</span>
+                        <span class="pm-stat-label">Developers</span>
+                    </div>
+                    <div class="pm-stat-divider"></div>
+                    <div class="pm-stat">
+                        <span class="pm-stat-value">@VisibleWorkItems.Count</span>
+                        <span class="pm-stat-label">Work Items</span>
+                    </div>
                 </div>
-                <div class="pm-stat-divider"></div>
-                <div class="pm-stat">
-                    <span class="pm-stat-value">@_developers.Count</span>
-                    <span class="pm-stat-label">Developers</span>
-                </div>
-                <div class="pm-stat-divider"></div>
-                <div class="pm-stat">
-                    <span class="pm-stat-value">@_workItems.Count</span>
-                    <span class="pm-stat-label">Work Items</span>
-                </div>
+                <button class="pm-signout-btn" @onclick="HandleSignOut">Sign Out</button>
             </div>
         </header>
 
@@ -148,7 +153,7 @@
                         <div class="pm-list">
                             @foreach (var dev in FilteredDevelopers)
                             {
-                                var devWorkItemCount = _workItems.Count(w => w.Developer == dev.Name);
+                                var devWorkItemCount = VisibleWorkItems.Count(w => w.Developer == dev.Name);
                                 <div class="pm-list-item pm-list-item--clickable" @onclick="() => _detailModal.OpenDeveloper(dev)">
                                     <div class="pm-list-item-accent pm-list-item-accent--developers"></div>
                                     @if (!string.IsNullOrEmpty(dev.ImagePath))
@@ -180,11 +185,11 @@
                     <div class="pm-card-title-row">
                         <span class="pm-card-icon pm-card-icon--workitems">▣</span>
                         <h2 class="pm-card-title">Work Items</h2>
-                        <span class="pm-badge">@_workItems.Count</span>
+                        <span class="pm-badge">@VisibleWorkItems.Count</span>
                     </div>
                 </div>
                 <div class="pm-card-body">
-                    @if (!_workItems.Any())
+                    @if (!VisibleWorkItems.Any())
                     {
                         <div class="pm-empty">
                             <span class="pm-empty-icon">▣</span>
@@ -205,9 +210,9 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var item in _workItems)
+                                    @foreach (var item in VisibleWorkItems)
                                     {
-                                        var dev = _developers.FirstOrDefault(d => d.Name == item.Developer);
+                                        var dev = VisibleDevelopers.FirstOrDefault(d => d.Name == item.Developer);
                                         var proj = _projects.FirstOrDefault(p => p.Uid == item.ProjectUid);
                                         <tr class="pm-table-row pm-table-row--clickable" @onclick="() => _detailModal.OpenWorkItem(item)">
                                             <td><span class="pm-item-name">@item.Reference</span></td>
@@ -262,8 +267,8 @@
 
 <EntityDetailModal @ref="_detailModal"
                    AllProjects="@_projects"
-                   AllDevelopers="@_developers"
-                   AllWorkItems="@_workItems"
+                   AllDevelopers="@VisibleDevelopers"
+                   AllWorkItems="@VisibleWorkItems"
                    OnClose="@(() => StateHasChanged())"
                    OnDataChanged="RefreshData" />
 
@@ -273,6 +278,7 @@
     private List<Project> _projects = [];
     private List<Developer> _developers = [];
     private List<WorkItem> _workItems = [];
+    private Account? _currentAccount;
     private bool _isLoading = true;
 
     private EntityDetailModal _detailModal = default!;
@@ -289,8 +295,14 @@
     private string _devSearch = string.Empty;
     private bool _devSortAsc = true;
 
-    private int _maxDevProjects => _developers.Any() ? _developers.Max(d => d.Assignments.Count) : 0;
-    private int _maxDevWorkItems => _developers.Any() ? _developers.Max(d => _workItems.Count(w => w.Developer == d.Name)) : 0;
+    private int _maxDevProjects => VisibleDevelopers.Any() ? VisibleDevelopers.Max(d => d.Assignments.Count) : 0;
+    private int _maxDevWorkItems => VisibleDevelopers.Any() ? VisibleDevelopers.Max(d => VisibleWorkItems.Count(w => w.Developer == d.Name)) : 0;
+
+    private List<Developer> VisibleDevelopers
+        => _developers.Where(d => d.Name != _currentAccount?.DisplayName).ToList();
+
+    private List<WorkItem> VisibleWorkItems
+        => _workItems.Where(w => w.Developer != _currentAccount?.DisplayName).ToList();
 
     private List<Project> FilteredProjects
     {
@@ -309,20 +321,31 @@
     {
         get
         {
-            var q = _developers
-                .Where(d => _devHealthFilter == null || d.Health == _devHealthFilter)
+            var q = VisibleDevelopers
+                .Where(d => _devHealthFilter   == null || d.Health   == _devHealthFilter)
                 .Where(d => _devWorkloadFilter == null || d.Workload == _devWorkloadFilter)
                 .Where(d => d.Assignments.Count >= _devMinProjects)
-                .Where(d => _workItems.Count(w => w.Developer == d.Name) >= _devMinWorkItems)
+                .Where(d => VisibleWorkItems.Count(w => w.Developer == d.Name) >= _devMinWorkItems)
                 .Where(d => string.IsNullOrWhiteSpace(_devSearch) || d.Name.Contains(_devSearch, StringComparison.OrdinalIgnoreCase));
             q = _devSortAsc ? q.OrderBy(d => d.Name) : q.OrderByDescending(d => d.Name);
             return q.ToList();
         }
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender) return;
+
+        var isAuth = await AppAuthentication.IsAuthenticatedAsync();
+        if (!isAuth)
+        {
+            Nav.NavigateTo("/auth");
+            return;
+        }
+
+        _currentAccount = await AppAuthentication.GetCurrentAccountAsync();
         await LoadData();
+        StateHasChanged();
     }
 
     private async Task LoadData()
@@ -343,6 +366,12 @@
         AppServices.InvalidateCache();
         await LoadData();
         StateHasChanged();
+    }
+
+    private async Task HandleSignOut()
+    {
+        await AppAuthentication.SignOutAsync();
+        Nav.NavigateTo("/auth");
     }
 
     private void ToggleProjActivityFilter(ProjectActivityStatus val)

@@ -22,6 +22,9 @@ public class AppRepository : IAppRepository
         if (resultType == typeof(List<WorkItem>))
             return (TResult)(object)LoadWorkItems(workbook);
 
+        if (resultType == typeof(List<Account>))
+            return (TResult)(object)LoadAccounts(workbook);
+
         throw new NotSupportedException($"Type {resultType.Name} is not supported.");
     }
 
@@ -80,6 +83,24 @@ public class AppRepository : IAppRepository
         }
 
         return developers;
+    }
+
+    static List<Account> LoadAccounts(IXLWorkbook workbook)
+    {
+        var sheet = workbook.Worksheet("Accounts");
+        var accounts = new List<Account>();
+
+        foreach (var row in sheet.RowsUsed().Skip(1))
+        {
+            accounts.Add(new Account
+            {
+                Uid         = row.Cell(1).GetString().Trim(),
+                DisplayName = row.Cell(2).GetString().Trim(),
+                Password    = row.Cell(3).GetString().Trim(),
+            });
+        }
+
+        return accounts;
     }
 
     static string ResolveDeveloperImagePath(string name) => name switch

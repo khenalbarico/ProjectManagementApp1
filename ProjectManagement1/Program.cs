@@ -1,10 +1,13 @@
 using ProjectManagement1.Components;
 using ProjectManagement1.Core;
+using ProjectManagement1.Core.Services.Authentication;
+using ProjectManagement1.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.RegisterServices();
+builder.Services.AddScoped<ISessionStorage, SessionStorageService>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
