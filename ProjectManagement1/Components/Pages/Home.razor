@@ -18,11 +18,11 @@
     {
         <header class="pm-header">
             <div class="pm-header-left">
-                <img src="@DeveloperImagePaths.Khen"
-                     alt="@DeveloperImagePaths.KhenName"
+                <img src="@_manager.ImagePath"
+                     alt="@_manager.DisplayName"
                      class="pm-logo-mark" />
                 <div>
-                    <h1 class="pm-title">Mngr. Khen</h1>
+                    <h1 class="pm-title">@_manager.Title</h1>
                     <p class="pm-subtitle">Project Management Dashboard</p>
                 </div>
             </div>
@@ -154,6 +154,7 @@
                             @foreach (var dev in FilteredDevelopers)
                             {
                                 var devWorkItemCount = VisibleWorkItems.Count(w => w.Developer == dev.Name);
+                                var isCurrentUser = dev.Name == _currentAccount?.DisplayName;
                                 <div class="pm-list-item pm-list-item--clickable" @onclick="() => _detailModal.OpenDeveloper(dev)">
                                     <div class="pm-list-item-accent pm-list-item-accent--developers"></div>
                                     @if (!string.IsNullOrEmpty(dev.ImagePath))
@@ -165,7 +166,13 @@
                                         <div class="pm-avatar">@GetInitials(dev.Name)</div>
                                     }
                                     <div class="pm-list-item-content">
-                                        <span class="pm-item-name">@dev.Name</span>
+                                        <div class="pm-item-name-row">
+                                            <span class="pm-item-name">@dev.Name</span>
+                                            @if (isCurrentUser)
+                                            {
+                                                <span class="pm-you-badge">you</span>
+                                            }
+                                        </div>
                                         <span class="pm-item-sub">@dev.Assignments.Count proj · @devWorkItemCount items</span>
                                     </div>
                                     <div class="pm-item-pills">
@@ -214,6 +221,7 @@
                                     {
                                         var dev = VisibleDevelopers.FirstOrDefault(d => d.Name == item.Developer);
                                         var proj = _projects.FirstOrDefault(p => p.Uid == item.ProjectUid);
+                                        var isCurrentUserItem = item.Developer == _currentAccount?.DisplayName;
                                         <tr class="pm-table-row pm-table-row--clickable" @onclick="() => _detailModal.OpenWorkItem(item)">
                                             <td><span class="pm-item-name">@item.Reference</span></td>
                                             <td>
@@ -239,6 +247,10 @@
                                                             <div class="pm-avatar pm-avatar--sm">@GetInitials(dev.Name)</div>
                                                         }
                                                         <span>@dev.Name</span>
+                                                        @if (isCurrentUserItem)
+                                                        {
+                                                            <span class="pm-you-badge">you</span>
+                                                        }
                                                     </div>
                                                 }
                                                 else
@@ -279,6 +291,7 @@
     private List<Developer> _developers = [];
     private List<WorkItem> _workItems = [];
     private Account? _currentAccount;
+    private ManagerInfo _manager = new("Manager", "", "Project Management Dashboard");
     private bool _isLoading = true;
 
     private EntityDetailModal _detailModal = default!;
@@ -299,10 +312,10 @@
     private int _maxDevWorkItems => VisibleDevelopers.Any() ? VisibleDevelopers.Max(d => VisibleWorkItems.Count(w => w.Developer == d.Name)) : 0;
 
     private List<Developer> VisibleDevelopers
-        => _developers.Where(d => d.Name != _currentAccount?.DisplayName).ToList();
+        => _developers.Where(d => d.Name != _manager.DisplayName).ToList();
 
     private List<WorkItem> VisibleWorkItems
-        => _workItems.Where(w => w.Developer != _currentAccount?.DisplayName).ToList();
+        => _workItems.Where(w => w.Developer != _manager.DisplayName).ToList();
 
     private List<Project> FilteredProjects
     {
@@ -322,7 +335,7 @@
         get
         {
             var q = VisibleDevelopers
-                .Where(d => _devHealthFilter   == null || d.Health   == _devHealthFilter)
+                .Where(d => _devHealthFilter == null || d.Health == _devHealthFilter)
                 .Where(d => _devWorkloadFilter == null || d.Workload == _devWorkloadFilter)
                 .Where(d => d.Assignments.Count >= _devMinProjects)
                 .Where(d => VisibleWorkItems.Count(w => w.Developer == d.Name) >= _devMinWorkItems)
@@ -344,6 +357,7 @@
         }
 
         _currentAccount = await AppAuthentication.GetCurrentAccountAsync();
+        _manager = await AppAuthentication.GetManagerInfoAsync();
         await LoadData();
         StateHasChanged();
     }
@@ -354,9 +368,9 @@
         await Task.Yield();
 
         var result = AppServices.LoadAllDataSource();
-        _projects   = result.Projects;
+        _projects = result.Projects;
         _developers = result.Developers;
-        _workItems  = result.WorkItems;
+        _workItems = result.WorkItems;
 
         _isLoading = false;
     }

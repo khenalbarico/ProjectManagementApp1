@@ -6,8 +6,8 @@
 <div class="auth-root">
     <div class="auth-card">
         <div class="auth-header">
-            <img src="@DeveloperImagePaths.Khen" alt="@DeveloperImagePaths.KhenName" class="auth-logo" />
-            <h1 class="auth-title">Mngr. Khen</h1>
+            <img src="@_manager.ImagePath" alt="@_manager.DisplayName" class="auth-logo" />
+            <h1 class="auth-title">@_manager.Title</h1>
             <p class="auth-subtitle">Sign in to continue</p>
         </div>
 
@@ -22,7 +22,7 @@
             {
                 <div class="auth-field">
                     <label class="auth-label">Account</label>
-                    <select class="auth-select" @bind="_selectedDisplayName">
+                    <select class="auth-select" @bind="_selectedDisplayName" @bind:after="OnAccountSelected">
                         <option value="">— Select account —</option>
                         @foreach (var account in _accounts)
                         {
@@ -70,6 +70,7 @@
     private bool _hasError = false;
     private bool _isBusy = false;
     private bool _isChecking = true;
+    private ManagerInfo _manager = new("Manager", DeveloperImagePaths.Khen, "Mngr. Dashboard");
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -82,15 +83,22 @@
             return;
         }
 
-        _accounts   = AppServices.LoadAccounts();
+        _accounts = AppServices.LoadAccounts();
         _isChecking = false;
         StateHasChanged();
+    }
+
+    private void OnAccountSelected()
+    {
+        if (string.IsNullOrEmpty(_selectedDisplayName)) return;
+        _manager = ManagerInfo.FromDisplayName(_selectedDisplayName);
+        _hasError = false;
     }
 
     private async Task HandleSignIn()
     {
         _hasError = false;
-        _isBusy   = true;
+        _isBusy = true;
 
         var success = await AppAuthentication.SignInAsync(_selectedDisplayName, _password);
 
@@ -101,7 +109,7 @@
         else
         {
             _hasError = true;
-            _isBusy   = false;
+            _isBusy = false;
         }
     }
 

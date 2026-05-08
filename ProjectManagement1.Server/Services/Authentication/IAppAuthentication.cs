@@ -8,4 +8,5 @@ public interface IAppAuthentication
     Task SignOutAsync();
     Task<Account?> GetCurrentAccountAsync();
     Task<bool> IsAuthenticatedAsync();
+    Task<ManagerInfo> GetManagerInfoAsync();
 }

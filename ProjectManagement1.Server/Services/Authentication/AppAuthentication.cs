@@ -1,4 +1,5 @@
 ﻿using ProjectManagement1.Models;
+using ProjectManagement1.Models.Constants;
 
 namespace ProjectManagement1.Core.Services.Authentication;
 
@@ -9,7 +10,7 @@ public class AppAuthentication(IAppServices _appServices, ISessionStorage _sessi
     public async Task<bool> SignInAsync(string displayName, string password)
     {
         var accounts = _appServices.LoadAccounts();
-        var match    = accounts.FirstOrDefault(a =>
+        var match = accounts.FirstOrDefault(a =>
             a.DisplayName == displayName &&
             a.Password == password);
 
@@ -35,4 +36,13 @@ public class AppAuthentication(IAppServices _appServices, ISessionStorage _sessi
 
     public async Task<bool> IsAuthenticatedAsync()
         => await GetCurrentAccountAsync() is not null;
+
+    public async Task<ManagerInfo> GetManagerInfoAsync()
+    {
+        var account = await GetCurrentAccountAsync();
+        if (account is null)
+            return new ManagerInfo("Manager", DeveloperImagePaths.Khen, "Project Management Dashboard");
+
+        return ManagerInfo.FromDisplayName(account.DisplayName);
+    }
 }
