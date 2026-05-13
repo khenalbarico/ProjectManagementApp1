@@ -2,6 +2,7 @@
 
 public enum WorkItemStatus
 {
+    Pending,
     Investigating,
     ImplementingSolution,
     WaitingForConfirmation,

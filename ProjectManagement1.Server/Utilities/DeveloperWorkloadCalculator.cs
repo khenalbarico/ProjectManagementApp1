@@ -5,9 +5,18 @@ namespace ProjectManagement1.Core.Utilities;
 
 public static class DeveloperWorkloadCalculator
 {
+    private static readonly HashSet<WorkItemStatus> ExcludedFromScoring =
+    [
+        WorkItemStatus.Pending,
+        WorkItemStatus.ProdDeployed,
+        WorkItemStatus.WaitingForConfirmation
+    ];
+
     public static DeveloperWorkloadStatus CalculateWorkload(this Developer developer, List<WorkItem> workItems, List<Project> projects)
     {
-        var devWorkItems = workItems.Where(w => w.Developer == developer.Name).ToList();
+        var devWorkItems = workItems
+            .Where(w => w.Developer == developer.Name && !ExcludedFromScoring.Contains(w.Status))
+            .ToList();
 
         if (!devWorkItems.Any())
             return DeveloperWorkloadStatus.Standby;

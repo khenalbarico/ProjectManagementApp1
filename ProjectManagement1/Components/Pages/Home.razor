@@ -192,15 +192,47 @@
                     <div class="pm-card-title-row">
                         <span class="pm-card-icon pm-card-icon--workitems">▣</span>
                         <h2 class="pm-card-title">Work Items</h2>
-                        <span class="pm-badge">@VisibleWorkItems.Count</span>
+                        <span class="pm-badge">@FilteredWorkItems.Count</span>
+                    </div>
+                    <div class="pm-search-row">
+                        <input class="pm-search-input" placeholder="Search by reference..." @bind="_wiSearch" @bind:event="oninput" />
+                        <button class="pm-sort-btn @(_wiSortAsc ? "pm-sort-btn--asc" : "pm-sort-btn--desc")" @onclick="() => _wiSortAsc = !_wiSortAsc" title="Sort A-Z / Z-A">
+                            ⇅
+                        </button>
+                    </div>
+                    <div class="pm-filter-row">
+                        <button class="pm-filter-chip @(_wiStatusFilter == null ? "pm-filter-chip--active" : "")" @onclick='() => _wiStatusFilter = null'>All</button>
+                        @foreach (var status in Enum.GetValues<WorkItemStatus>())
+                        {
+                            var s = status;
+                            <button class="pm-filter-chip @(_wiStatusFilter == s ? "pm-filter-chip--active" : "")" @onclick="() => ToggleWiStatusFilter(s)">@FormatEnum(s)</button>
+                        }
+                    </div>
+                    <div class="pm-filter-row">
+                        <span class="pm-filter-range-label" style="white-space:nowrap;">Developer</span>
+                        <select class="pm-search-input pm-input pm-select" style="max-width:180px;" @bind="_wiDevFilter">
+                            <option value="">All</option>
+                            @foreach (var dev in VisibleDevelopers.OrderBy(d => d.Name))
+                            {
+                                <option value="@dev.Name">@dev.Name</option>
+                            }
+                        </select>
+                        <span class="pm-filter-range-label" style="white-space:nowrap;margin-left:0.5rem;">Project</span>
+                        <select class="pm-search-input pm-input pm-select" style="max-width:180px;" @bind="_wiProjFilter">
+                            <option value="">All</option>
+                            @foreach (var proj in _projects.OrderBy(p => p.Title))
+                            {
+                                <option value="@proj.Uid">@proj.Title</option>
+                            }
+                        </select>
                     </div>
                 </div>
                 <div class="pm-card-body">
-                    @if (!VisibleWorkItems.Any())
+                    @if (!FilteredWorkItems.Any())
                     {
                         <div class="pm-empty">
                             <span class="pm-empty-icon">▣</span>
-                            <p>No work items yet.</p>
+                            <p>No work items match filters.</p>
                         </div>
                     }
                     else
@@ -217,7 +249,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var item in VisibleWorkItems)
+                                    @foreach (var item in FilteredWorkItems)
                                     {
                                         var dev = VisibleDevelopers.FirstOrDefault(d => d.Name == item.Developer);
                                         var proj = _projects.FirstOrDefault(p => p.Uid == item.ProjectUid);
@@ -308,6 +340,12 @@
     private string _devSearch = string.Empty;
     private bool _devSortAsc = true;
 
+    private WorkItemStatus? _wiStatusFilter = null;
+    private string _wiDevFilter = string.Empty;
+    private string _wiProjFilter = string.Empty;
+    private string _wiSearch = string.Empty;
+    private bool _wiSortAsc = true;
+
     private int _maxDevProjects => VisibleDevelopers.Any() ? VisibleDevelopers.Max(d => d.Assignments.Count) : 0;
     private int _maxDevWorkItems => VisibleDevelopers.Any() ? VisibleDevelopers.Max(d => VisibleWorkItems.Count(w => w.Developer == d.Name)) : 0;
 
@@ -341,6 +379,20 @@
                 .Where(d => VisibleWorkItems.Count(w => w.Developer == d.Name) >= _devMinWorkItems)
                 .Where(d => string.IsNullOrWhiteSpace(_devSearch) || d.Name.Contains(_devSearch, StringComparison.OrdinalIgnoreCase));
             q = _devSortAsc ? q.OrderBy(d => d.Name) : q.OrderByDescending(d => d.Name);
+            return q.ToList();
+        }
+    }
+
+    private List<WorkItem> FilteredWorkItems
+    {
+        get
+        {
+            var q = VisibleWorkItems
+                .Where(w => _wiStatusFilter == null || w.Status == _wiStatusFilter)
+                .Where(w => string.IsNullOrEmpty(_wiDevFilter) || w.Developer == _wiDevFilter)
+                .Where(w => string.IsNullOrEmpty(_wiProjFilter) || w.ProjectUid == _wiProjFilter)
+                .Where(w => string.IsNullOrWhiteSpace(_wiSearch) || w.Reference.Contains(_wiSearch, StringComparison.OrdinalIgnoreCase));
+            q = _wiSortAsc ? q.OrderBy(w => w.Reference) : q.OrderByDescending(w => w.Reference);
             return q.ToList();
         }
     }
@@ -400,6 +452,9 @@
     private void ToggleDevWorkloadFilter(DeveloperWorkloadStatus val)
         => _devWorkloadFilter = _devWorkloadFilter == val ? null : val;
 
+    private void ToggleWiStatusFilter(WorkItemStatus val)
+        => _wiStatusFilter = _wiStatusFilter == val ? null : val;
+
     private static string GetInitials(string? name)
     {
         if (string.IsNullOrWhiteSpace(name)) return "?";
@@ -422,6 +477,7 @@
 
     private static string GetWorkItemStatusClass(WorkItemStatus s) => s switch
     {
+        WorkItemStatus.Pending => "pending",
         WorkItemStatus.Investigating => "investigating",
         WorkItemStatus.ImplementingSolution => "implementing",
         WorkItemStatus.WaitingForConfirmation => "waiting",
